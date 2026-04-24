@@ -71,6 +71,17 @@ a {
   width: min(240px, 60vw);
 }
 
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .app-shell {
   position: relative;
   min-height: 100svh;
@@ -1373,7 +1384,7 @@ h1 {
 
 .orbit-map {
   position: absolute;
-  inset: clamp(58px, 7vh, 92px) clamp(-96px, -3vw, -28px) clamp(38px, 5vh, 70px);
+  inset: clamp(16px, 3vh, 30px) clamp(-96px, -3vw, -28px) clamp(16px, 3vh, 30px);
   z-index: 3;
   width: auto;
   min-height: 0;
@@ -1618,7 +1629,7 @@ h1 {
   }
 
   .orbit-map {
-    inset: 74px clamp(-120px, -7vw, -44px) 80px;
+    inset: 20px clamp(-120px, -7vw, -44px) 52px;
   }
 
   .detail-panel {
@@ -1722,7 +1733,7 @@ h1 {
 
   .orbit-map {
     position: absolute;
-    inset: 142px -10px 236px;
+    inset: 10px -10px 166px;
     width: auto;
     min-height: 0;
     aspect-ratio: auto;
@@ -1792,10 +1803,10 @@ h1 {
 
   .detail-panel {
     right: 10px;
-    bottom: 70px;
+    bottom: 10px;
     left: 10px;
     width: auto;
-    max-height: 20svh;
+    max-height: 23svh;
     border-radius: 22px;
   }
 
@@ -1850,11 +1861,11 @@ h1 {
   }
 
   .orbit-map {
-    inset: 142px -8px 230px;
+    inset: 8px -8px 160px;
   }
 
   .detail-panel {
-    max-height: 20svh;
+    max-height: 22svh;
   }
 }
 
