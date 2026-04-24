@@ -518,9 +518,9 @@ h1 {
 }
 
 .project-node[data-project-id="club"] .planet-avatar img {
-  width: 72%;
-  height: 72%;
-  image-rendering: pixelated;
+  width: 98%;
+  height: 98%;
+  image-rendering: auto;
 }
 
 .project-node[data-project-id="fortrust"] .planet-avatar img {

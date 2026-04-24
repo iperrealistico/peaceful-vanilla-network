@@ -47,7 +47,7 @@ export const orbitProjects: OrbitProject[] = [
     description:
       "A friendly Minecraft SMP and future Hytale home with a stable world, cross-play support, community culture, and a clear no pay-to-win philosophy.",
     status: "live",
-    icon: "assets/logos/peaceful-vanilla-club-favicon-80.png",
+    icon: "assets/logos/peaceful-vanilla-club-logo.png",
     color: "#ff9500",
     orbitRadius: 33,
     orbitSpeed: 0.00012,
