@@ -1,0 +1,110 @@
+export type ProjectStatus = "live" | "coming-soon";
+export type ProjectId = "club" | "chat" | "space" | "fortrust";
+
+export interface OrbitProject {
+  id: ProjectId;
+  name: string;
+  domainLabel: string;
+  tagline: string;
+  description: string;
+  status: ProjectStatus;
+  icon: string;
+  color: string;
+  orbitRadius: number;
+  orbitSpeed: number;
+  initialAngle: number;
+  primaryCta?: {
+    label: string;
+    href: string;
+  };
+  secondaryCta?: {
+    label: string;
+    href: string;
+  };
+}
+
+export const networkCore = {
+  name: "Peaceful Vanilla Network",
+  tagline: "Connected worlds for peaceful communities.",
+  icon: "assets/generated/peaceful-vanilla-network-icon.png",
+  description:
+    "Peaceful Vanilla Network is the home of servers, spaces, and tools built for long-term, privacy-conscious online communities.",
+  principles: ["Community-first", "Privacy-aware", "No pay-to-win culture", "Built to last"],
+  proof: [
+    { label: "Since", value: "2019" },
+    { label: "Players", value: "110K+" },
+    { label: "Backups", value: "28TB" },
+    { label: "Projects", value: "4" }
+  ]
+} as const;
+
+export const orbitProjects: OrbitProject[] = [
+  {
+    id: "club",
+    name: "Peaceful Vanilla Club",
+    domainLabel: "peacefulvanilla.club",
+    tagline: "The long-term gaming world.",
+    description:
+      "A friendly Minecraft SMP and future Hytale home with a stable world, cross-play support, community culture, and a clear no pay-to-win philosophy.",
+    status: "live",
+    icon: "assets/logos/peaceful-vanilla-club-favicon-80.png",
+    color: "#ff9500",
+    orbitRadius: 33,
+    orbitSpeed: 0.00012,
+    initialAngle: -2.72,
+    primaryCta: {
+      label: "Visit Club",
+      href: "https://www.peacefulvanilla.club/"
+    }
+  },
+  {
+    id: "chat",
+    name: "Peaceful Vanilla Chat",
+    domainLabel: "peacefulvanilla.chat",
+    tagline: "Privacy-first communication.",
+    description:
+      "A Matrix-powered, self-hosted communication platform where players, support teams, creators, and communities stay connected without face scans or personal documents.",
+    status: "live",
+    icon: "assets/logos/peaceful-vanilla-chat-icon-192.png",
+    color: "#507cbe",
+    orbitRadius: 37,
+    orbitSpeed: 0.000095,
+    initialAngle: -0.42,
+    primaryCta: {
+      label: "Visit Chat",
+      href: "https://www.peacefulvanilla.chat/"
+    },
+    secondaryCta: {
+      label: "Enter App",
+      href: "https://app.peacefulvanilla.chat"
+    }
+  },
+  {
+    id: "space",
+    name: "Peaceful Vanilla Space",
+    domainLabel: "peacefulvanilla.space",
+    tagline: "Community hubs and profiles.",
+    description:
+      "A coming Peaceful Vanilla web layer for spaces, profiles, community hubs, and social surfaces that make the wider network easier to discover.",
+    status: "coming-soon",
+    icon: "assets/generated/peaceful-vanilla-space-icon.png",
+    color: "#ffc26b",
+    orbitRadius: 41,
+    orbitSpeed: 0.000075,
+    initialAngle: 2.38
+  },
+  {
+    id: "fortrust",
+    name: "Fortrust",
+    domainLabel: "Fortrust by Peaceful Vanilla",
+    tagline: "A separate experiment.",
+    description:
+      "An independent Peaceful Vanilla experiment kept intentionally separate, so new ideas can be tested without blurring the core network identity.",
+    status: "coming-soon",
+    icon: "assets/fortrust/fortrust-icon-transparent.png",
+    color: "#d0c0b8",
+    orbitRadius: 29,
+    orbitSpeed: 0.000105,
+    initialAngle: 0.92
+  }
+];
