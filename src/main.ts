@@ -13,6 +13,7 @@ const mount = app;
 const baseUrl = import.meta.env.BASE_URL;
 const selectionOrder: Selection[] = ["network", ...orbitProjects.map((project) => project.id)];
 let selected: Selection = "network";
+let panelExpanded = false;
 
 function assetPath(path: string): string {
   return `${baseUrl}${path}`;
@@ -33,6 +34,10 @@ function statusLabel(status: OrbitProject["status"]): string {
 
 function getProject(id: Selection): OrbitProject | undefined {
   return orbitProjects.find((project) => project.id === id);
+}
+
+function isProjectSelection(value: Selection): value is ProjectId {
+  return value !== "network";
 }
 
 function renderOrbitRings(): string {
@@ -189,7 +194,7 @@ function renderPanel(): string {
 
 function renderShell(): void {
   mount.innerHTML = `
-    <div class="app-shell" style="--project-color: var(--accent)" data-selected="network">
+    <div class="app-shell" style="--project-color: var(--accent)" data-selected="network" data-panel-expanded="false">
       <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
 
       <main class="command-deck">
@@ -212,7 +217,7 @@ function renderShell(): void {
           </div>
         </section>
 
-        <aside class="detail-panel" id="detail-panel" aria-live="polite">
+        <aside class="detail-panel is-collapsed" id="detail-panel" aria-live="polite" aria-expanded="false">
           ${renderPanel()}
         </aside>
       </main>
@@ -222,6 +227,7 @@ function renderShell(): void {
 
 function setSelection(next: Selection): void {
   selected = next;
+  panelExpanded = isProjectSelection(selected);
 
   const project = getProject(selected);
   const shell = document.querySelector<HTMLElement>(".app-shell");
@@ -229,6 +235,9 @@ function setSelection(next: Selection): void {
   const projectColor = project?.color ?? "#ff9500";
 
   shell?.setAttribute("data-selected", selected);
+  shell?.setAttribute("data-panel-expanded", String(panelExpanded));
+  shell?.classList.toggle("is-focused", panelExpanded);
+  shell?.classList.toggle("is-panel-expanded", panelExpanded);
   shell?.style.setProperty("--project-color", projectColor);
   panel?.style.setProperty("--project-color", projectColor);
 
@@ -237,7 +246,6 @@ function setSelection(next: Selection): void {
     element.classList.toggle("is-active", isActive);
     if (element instanceof HTMLButtonElement && element.classList.contains("project-node")) {
       element.setAttribute("aria-pressed", String(isActive));
-      element.classList.remove("is-dimmed");
     }
   });
 
@@ -253,6 +261,9 @@ function setSelection(next: Selection): void {
   });
 
   if (panel) {
+    panel.classList.toggle("is-expanded", panelExpanded);
+    panel.classList.toggle("is-collapsed", !panelExpanded);
+    panel.setAttribute("aria-expanded", String(panelExpanded));
     panel.innerHTML = renderPanel();
   }
 }
@@ -294,12 +305,18 @@ function wireInteractions(): void {
       setSelection("network");
     }
   });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && panelExpanded) {
+      event.preventDefault();
+      setSelection("network");
+    }
+  });
 }
 
 function animateOrbit(): void {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const orbitMap = document.querySelector<HTMLElement>("#orbit-map");
-  const displayedPositions = new Map<ProjectId, { x: number; y: number }>();
   let orbitTime = 0;
   let previousFrameTime: number | undefined;
 
@@ -358,15 +375,10 @@ function animateOrbit(): void {
         ring.setAttribute("ry", (((radius * orbitSquash) / mapHeight) * 650).toFixed(1));
       }
 
-      const previous = displayedPositions.get(project.id);
-      const smoothing = reducedMotion || !previous ? 1 : Math.min(1, delta / 90);
-      const displayX = previous ? previous.x + (x - previous.x) * smoothing : x;
-      const displayY = previous ? previous.y + (y - previous.y) * smoothing : y;
-      const xPercent = (displayX / mapWidth) * 100;
-      const yPercent = (displayY / mapHeight) * 100;
+      const xPercent = (x / mapWidth) * 100;
+      const yPercent = (y / mapHeight) * 100;
       const connector = document.querySelector<SVGLineElement>(`[data-connector="${project.id}"]`);
 
-      displayedPositions.set(project.id, { x: displayX, y: displayY });
       button.style.setProperty("--x", `${xPercent.toFixed(3)}%`);
       button.style.setProperty("--y", `${yPercent.toFixed(3)}%`);
 
@@ -418,10 +430,6 @@ function startStarfield(): void {
   const stars = createStars(190);
   let width = 0;
   let height = 0;
-  let pointerX = 0.5;
-  let pointerY = 0.5;
-  let targetPointerX = 0.5;
-  let targetPointerY = 0.5;
 
   function resize(): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -436,8 +444,6 @@ function startStarfield(): void {
 
   function draw(time: number): void {
     starContext.clearRect(0, 0, width, height);
-    pointerX += (targetPointerX - pointerX) * 0.06;
-    pointerY += (targetPointerY - pointerY) * 0.06;
 
     const gradient = starContext.createRadialGradient(width * 0.5, height * 0.45, 0, width * 0.5, height * 0.45, width * 0.72);
     gradient.addColorStop(0, "rgba(255, 149, 0, 0.13)");
@@ -447,11 +453,9 @@ function startStarfield(): void {
     starContext.fillRect(0, 0, width, height);
 
     for (const star of stars) {
-      const driftX = (pointerX - 0.5) * star.depth * 34;
-      const driftY = (pointerY - 0.5) * star.depth * 22;
       const twinkle = reducedMotion ? 0.75 : 0.55 + Math.sin(time * 0.0012 + star.twinkle) * 0.28;
-      const x = star.x * width + driftX;
-      const y = star.y * height + driftY;
+      const x = star.x * width;
+      const y = star.y * height;
       const color = star.tone > 0.82 ? "255, 149, 0" : star.tone > 0.66 ? "80, 124, 190" : "247, 249, 252";
 
       starContext.beginPath();
@@ -467,14 +471,6 @@ function startStarfield(): void {
   }
 
   window.addEventListener("resize", resize);
-  window.addEventListener("pointermove", (event) => {
-    targetPointerX = event.clientX / Math.max(window.innerWidth, 1);
-    targetPointerY = event.clientY / Math.max(window.innerHeight, 1);
-  });
-  window.addEventListener("pointerleave", () => {
-    targetPointerX = 0.5;
-    targetPointerY = 0.5;
-  });
 
   resize();
 
