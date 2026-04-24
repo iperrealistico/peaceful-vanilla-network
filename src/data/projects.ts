@@ -25,11 +25,11 @@ export interface OrbitProject {
 
 export const networkCore = {
   name: "Peaceful Vanilla Network",
-  tagline: "Connected worlds for peaceful communities.",
+  tagline: "Community, fun, privacy, and connection.",
   icon: "assets/generated/peaceful-vanilla-network-icon.png",
   description:
-    "Peaceful Vanilla Network is the home of servers, spaces, and tools built for long-term, privacy-conscious online communities.",
-  principles: ["Community-first", "Privacy-aware", "No pay-to-win culture", "Built to last"],
+    "Peaceful Vanilla Network is a small-business ecosystem built by family and friends: gaming worlds, chat, profiles, and experiments made for real connection without big-corp nonsense.",
+  principles: ["Community-first", "Fun-driven", "Privacy-aware", "Small business, not big corp"],
   proof: [
     { label: "Since", value: "2019" },
     { label: "Players", value: "110K+" },
@@ -43,9 +43,9 @@ export const orbitProjects: OrbitProject[] = [
     id: "club",
     name: "Peaceful Vanilla Club",
     domainLabel: "peacefulvanilla.club",
-    tagline: "The long-term gaming world.",
+    tagline: "The fun-first gaming world.",
     description:
-      "A friendly Minecraft SMP and future Hytale home with a stable world, cross-play support, community culture, and a clear no pay-to-win philosophy.",
+      "A family-and-friends driven Minecraft SMP with a stable world, cross-play support, strong community culture, and a clear no pay-to-win philosophy.",
     status: "live",
     icon: "assets/logos/peaceful-vanilla-club-logo.png",
     color: "#ff9500",
@@ -63,7 +63,7 @@ export const orbitProjects: OrbitProject[] = [
     domainLabel: "hytale.peacefulvanilla.club",
     tagline: "The Hytale vanilla server branch.",
     description:
-      "A dedicated Hytale-facing home for Peaceful Vanilla Club, carrying the same calm SMP culture, long-term mindset, and no pay-to-win philosophy into a new world.",
+      "A dedicated Hytale-facing home for Peaceful Vanilla Club, carrying the same fun-first community spirit, long-term mindset, and no pay-to-win philosophy into a new world.",
     status: "live",
     icon: "assets/logos/peaceful-vanilla-club-hytale-icon.jpg",
     color: "#ff7a00",
@@ -83,9 +83,9 @@ export const orbitProjects: OrbitProject[] = [
     id: "chat",
     name: "Peaceful Vanilla Chat",
     domainLabel: "peacefulvanilla.chat",
-    tagline: "Privacy-first communication.",
+    tagline: "Private connection without big-corp baggage.",
     description:
-      "A Matrix-powered, self-hosted communication platform where players, support teams, creators, and communities stay connected without face scans or personal documents.",
+      "A Matrix-powered, self-hosted communication platform where players, creators, family groups, and friends stay connected without face scans, personal documents, or big-platform lock-in.",
     status: "live",
     icon: "assets/logos/peaceful-vanilla-chat-icon-192.png",
     color: "#507cbe",
@@ -105,9 +105,9 @@ export const orbitProjects: OrbitProject[] = [
     id: "space",
     name: "Peaceful Vanilla Space",
     domainLabel: "peacefulvanilla.space",
-    tagline: "Community hubs and profiles.",
+    tagline: "Profiles, hubs, and social connection.",
     description:
-      "A coming Peaceful Vanilla web layer for spaces, profiles, community hubs, and social surfaces that make the wider network easier to discover.",
+      "A coming Peaceful Vanilla web layer for profiles, community hubs, and social surfaces that make the wider network easier to discover and more fun to explore.",
     status: "coming-soon",
     icon: "assets/generated/peaceful-vanilla-space-icon.png",
     color: "#ffc26b",
@@ -121,7 +121,7 @@ export const orbitProjects: OrbitProject[] = [
     domainLabel: "Fortrust by Peaceful Vanilla",
     tagline: "A separate experiment.",
     description:
-      "An independent Peaceful Vanilla experiment kept intentionally separate, so new ideas can be tested without blurring the core network identity.",
+      "An independent Peaceful Vanilla experiment kept intentionally separate, so small-team ideas can be tested freely without blurring the core network identity.",
     status: "coming-soon",
     icon: "assets/fortrust/fortrust-icon.png",
     color: "#d0c0b8",

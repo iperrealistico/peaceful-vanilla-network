@@ -233,10 +233,10 @@ function renderShell(): void {
         <section class="universe-card" aria-labelledby="network-title">
           <div class="hero-copy">
             <p class="eyebrow">Public home - ecosystem map</p>
-            <h1 id="network-title">Connected worlds for peaceful communities.</h1>
+            <h1 id="network-title">Community, fun, privacy, and connection.</h1>
             <p class="hero-lead">
-              Peaceful Vanilla Network is the gravitational center for our servers,
-              community spaces, self-hosted communication, and future experiments.
+              A family-and-friends driven network for gaming worlds, private chat,
+              community spaces, and small-business experiments built far from big-corp logic.
             </p>
           </div>
 
