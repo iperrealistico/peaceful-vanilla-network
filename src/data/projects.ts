@@ -123,7 +123,7 @@ export const orbitProjects: OrbitProject[] = [
     description:
       "An independent Peaceful Vanilla experiment kept intentionally separate, so new ideas can be tested without blurring the core network identity.",
     status: "coming-soon",
-    icon: "assets/fortrust/fortrust-icon-transparent.png",
+    icon: "assets/fortrust/fortrust-icon.png",
     color: "#d0c0b8",
     orbitRadius: 29,
     orbitSpeed: 0.000105,
