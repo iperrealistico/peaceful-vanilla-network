@@ -945,7 +945,7 @@ h1 {
 
   .mini-nav {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     justify-content: stretch;
   }
 
@@ -1076,6 +1076,10 @@ h1 {
 }
 
 @media (max-width: 440px) {
+  .mini-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .brand-title {
     font-size: 0.84rem;
   }

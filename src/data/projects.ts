@@ -1,5 +1,5 @@
 export type ProjectStatus = "live" | "coming-soon";
-export type ProjectId = "club" | "chat" | "space" | "fortrust";
+export type ProjectId = "club" | "hytale" | "chat" | "space" | "fortrust";
 
 export interface OrbitProject {
   id: ProjectId;
@@ -34,7 +34,7 @@ export const networkCore = {
     { label: "Since", value: "2019" },
     { label: "Players", value: "110K+" },
     { label: "Backups", value: "28TB" },
-    { label: "Projects", value: "4" }
+    { label: "Projects", value: "5" }
   ]
 } as const;
 
@@ -53,6 +53,28 @@ export const orbitProjects: OrbitProject[] = [
     orbitSpeed: 0.00012,
     initialAngle: -2.72,
     primaryCta: {
+      label: "Visit Club",
+      href: "https://www.peacefulvanilla.club/"
+    }
+  },
+  {
+    id: "hytale",
+    name: "Peaceful Vanilla Club: Hytale",
+    domainLabel: "hytale.peacefulvanilla.club",
+    tagline: "The Hytale vanilla server branch.",
+    description:
+      "A dedicated Hytale-facing home for Peaceful Vanilla Club, carrying the same calm SMP culture, long-term mindset, and no pay-to-win philosophy into a new world.",
+    status: "live",
+    icon: "assets/logos/peaceful-vanilla-club-hytale-icon.jpg",
+    color: "#ff7a00",
+    orbitRadius: 46,
+    orbitSpeed: 0.000082,
+    initialAngle: -1.48,
+    primaryCta: {
+      label: "Visit Hytale",
+      href: "https://hytale.peacefulvanilla.club/"
+    },
+    secondaryCta: {
       label: "Visit Club",
       href: "https://www.peacefulvanilla.club/"
     }
