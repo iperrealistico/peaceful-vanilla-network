@@ -479,6 +479,7 @@ h1 {
 
 .planet-avatar {
   position: relative;
+  isolation: isolate;
   display: grid;
   width: clamp(76px, 7.5vw, 108px);
   aspect-ratio: 1;
@@ -492,6 +493,33 @@ h1 {
   box-shadow:
     inset 0 0 30px rgba(255, 255, 255, 0.05),
     0 18px 48px rgba(0, 0, 0, 0.36);
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar,
+.project-node[data-project-id="space"] .planet-avatar,
+.project-node[data-project-id="fortrust"] .planet-avatar {
+  border-color: color-mix(in srgb, var(--project-color) 58%, rgba(255, 255, 255, 0.26));
+  background:
+    radial-gradient(circle at 50% 38%, color-mix(in srgb, var(--project-color) 24%, transparent), transparent 46%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.015) 42%, rgba(0, 0, 0, 0.16)),
+    rgba(8, 12, 18, 0.72);
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar::before,
+.project-node[data-project-id="space"] .planet-avatar::before,
+.project-node[data-project-id="fortrust"] .planet-avatar::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  z-index: 0;
+  border: 1px solid color-mix(in srgb, var(--project-color) 48%, rgba(255, 255, 255, 0.2));
+  border-radius: 22px;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02) 44%, rgba(0, 0, 0, 0.18));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
+    0 12px 28px rgba(0, 0, 0, 0.3);
 }
 
 .planet-avatar::after {
@@ -511,16 +539,66 @@ h1 {
 }
 
 .planet-avatar img {
+  position: relative;
+  z-index: 1;
   width: 84%;
   height: 84%;
   object-fit: contain;
   image-rendering: auto;
 }
 
+.project-node[data-project-id="club"] {
+  width: clamp(112px, 10.8vw, 152px);
+}
+
+.project-node[data-project-id="chat"] {
+  width: clamp(106px, 10vw, 142px);
+}
+
+.project-node[data-project-id="hytale"] {
+  width: clamp(78px, 7.2vw, 104px);
+}
+
+.project-node[data-project-id="club"] .planet-avatar {
+  width: clamp(92px, 8.8vw, 126px);
+}
+
+.project-node[data-project-id="chat"] .planet-avatar {
+  width: clamp(88px, 8.4vw, 120px);
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar {
+  width: clamp(62px, 6.1vw, 88px);
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar::before {
+  inset: 8px;
+  border-radius: 18px;
+}
+
 .project-node[data-project-id="club"] .planet-avatar img {
-  width: 98%;
-  height: 98%;
+  width: 116%;
+  height: 116%;
   image-rendering: auto;
+}
+
+.project-node[data-project-id="chat"] .planet-avatar img {
+  width: 103%;
+  height: 103%;
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar img {
+  width: 72%;
+  height: 72%;
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar img,
+.project-node[data-project-id="space"] .planet-avatar img,
+.project-node[data-project-id="fortrust"] .planet-avatar img {
+  border-radius: 18px;
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.28),
+    0 0 0 1px color-mix(in srgb, var(--project-color) 28%, rgba(255, 255, 255, 0.18));
 }
 
 .project-node[data-project-id="fortrust"] .planet-avatar img {
@@ -733,6 +811,15 @@ h1 {
   filter:
     drop-shadow(0 24px 42px rgba(0, 0, 0, 0.48))
     drop-shadow(0 0 22px color-mix(in srgb, var(--project-color, var(--accent)) 30%, transparent));
+}
+
+.feature-art[data-project-id="hytale"] img,
+.feature-art[data-project-id="space"] img,
+.feature-art[data-project-id="fortrust"] img {
+  border-radius: 26px;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--project-color, var(--accent)) 34%, rgba(255, 255, 255, 0.18)),
+    0 20px 48px rgba(0, 0, 0, 0.34);
 }
 
 .panel-copy {

@@ -186,7 +186,7 @@ function renderProjectPanel(project: OrbitProject): string {
         }">${statusLabel(project.status)}</span>
         <button type="button" class="panel-close" data-select="network" aria-label="Return to network overview">x</button>
       </div>
-      <div class="feature-art" style="--project-color: ${project.color}">
+      <div class="feature-art" data-project-id="${project.id}" style="--project-color: ${project.color}">
         <img src="${assetPath(project.icon)}" alt="" />
       </div>
       <div class="panel-copy">
