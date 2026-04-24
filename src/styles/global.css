@@ -1202,3 +1202,854 @@ h1 {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Orbit-first rework: the planetary system becomes the page, everything else becomes HUD. */
+body {
+  overflow: hidden;
+}
+
+.app-shell {
+  min-height: 100svh;
+  overflow: hidden;
+}
+
+.app-shell::before {
+  background-size: 112px 112px;
+  opacity: 0.72;
+}
+
+.app-shell::after {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 149, 0, 0.14), transparent 28%),
+    radial-gradient(circle at 20% 72%, rgba(255, 194, 107, 0.08), transparent 22%),
+    radial-gradient(circle at 78% 20%, rgba(80, 124, 190, 0.12), transparent 25%),
+    linear-gradient(90deg, rgba(255, 149, 0, 0.1), transparent 20%, transparent 80%, rgba(80, 124, 190, 0.09));
+}
+
+.topbar {
+  position: fixed;
+  inset: 16px 18px auto;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+  backdrop-filter: none;
+}
+
+.topbar > * {
+  pointer-events: auto;
+}
+
+.brand-button,
+.mini-nav,
+.top-kicker,
+.footer-note,
+.hero-copy,
+.detail-panel,
+.proof-rail,
+.drag-hint {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 38%),
+    rgba(5, 8, 13, 0.62);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 18px 70px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(20px);
+}
+
+.brand-button {
+  gap: 11px;
+  max-width: min(360px, calc(100vw - 36px));
+  padding: 10px 13px 10px 10px;
+  border-radius: 20px;
+}
+
+.brand-mark {
+  width: 42px;
+  height: 42px;
+}
+
+.brand-title {
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+}
+
+.brand-subtitle {
+  font-size: 0.58rem;
+  letter-spacing: 0.42em;
+}
+
+.mini-nav {
+  gap: 7px;
+  padding: 8px;
+  border-radius: 20px;
+}
+
+.mini-nav button {
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.top-kicker {
+  position: fixed;
+  top: 84px;
+  left: 18px;
+  justify-self: auto;
+  width: min(318px, calc(100vw - 36px));
+  max-width: none;
+  padding: 11px 13px;
+  border-radius: 18px;
+  color: rgba(247, 249, 252, 0.78);
+  font-size: 0.82rem;
+}
+
+.command-deck {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100%;
+  min-height: 100svh;
+  margin: 0;
+}
+
+.universe-card {
+  position: absolute;
+  inset: 0;
+  min-height: 100svh;
+  height: auto;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.universe-card::before {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(255, 149, 0, 0.24), transparent 22%),
+    radial-gradient(circle at 21% 74%, rgba(255, 194, 107, 0.1), transparent 20%),
+    radial-gradient(circle at 78% 28%, rgba(80, 124, 190, 0.14), transparent 22%);
+}
+
+.hero-copy {
+  position: fixed;
+  top: auto;
+  right: auto;
+  bottom: clamp(82px, 10vh, 118px);
+  left: clamp(16px, 2.4vw, 34px);
+  z-index: 24;
+  max-width: min(370px, calc(100vw - 40px));
+  gap: 9px;
+  padding: 18px;
+  border-radius: 26px;
+  pointer-events: auto;
+}
+
+.eyebrow {
+  font-size: 0.62rem;
+}
+
+h1 {
+  font-size: clamp(1.75rem, 2.35vw, 3rem);
+  line-height: 0.92;
+}
+
+.hero-lead {
+  max-width: none;
+  font-size: 0.94rem;
+  line-height: 1.48;
+}
+
+.orbit-map {
+  position: absolute;
+  inset: clamp(58px, 7vh, 92px) clamp(-96px, -3vw, -28px) clamp(38px, 5vh, 70px);
+  z-index: 3;
+  width: auto;
+  min-height: 0;
+  transform: none;
+}
+
+.orbit-map::before {
+  inset: 4% 8%;
+  background:
+    radial-gradient(circle, rgba(255, 149, 0, 0.22), transparent 18%),
+    radial-gradient(circle, rgba(255, 255, 255, 0.07), transparent 43%);
+  filter: blur(16px);
+}
+
+.orbit-ring {
+  stroke: rgba(255, 255, 255, 0.18);
+  stroke-width: 1;
+  stroke-dasharray: 2 10;
+}
+
+.orbit-ring.is-active {
+  stroke-width: 2.4;
+}
+
+.orbit-line {
+  stroke-width: 1.4;
+}
+
+.core-button {
+  width: clamp(220px, 20vw, 344px);
+}
+
+.core-aura {
+  inset: 3%;
+  border-color: rgba(255, 194, 107, 0.5);
+  background:
+    radial-gradient(circle, rgba(255, 149, 0, 0.42), transparent 52%),
+    conic-gradient(from 20deg, transparent, rgba(255, 149, 0, 0.38), transparent, rgba(255, 194, 107, 0.24), transparent);
+}
+
+.core-label {
+  top: calc(100% - 14px);
+  min-width: 220px;
+}
+
+.project-node {
+  width: clamp(112px, 8.8vw, 156px);
+}
+
+.planet-avatar {
+  width: clamp(88px, 7vw, 126px);
+  border-radius: 34px;
+}
+
+.project-node[data-project-id="club"] {
+  width: clamp(136px, 11.5vw, 190px);
+}
+
+.project-node[data-project-id="chat"] {
+  width: clamp(128px, 10.8vw, 176px);
+}
+
+.project-node[data-project-id="hytale"] {
+  width: clamp(86px, 6.7vw, 118px);
+}
+
+.project-node[data-project-id="club"] .planet-avatar {
+  width: clamp(112px, 9.4vw, 154px);
+}
+
+.project-node[data-project-id="chat"] .planet-avatar {
+  width: clamp(104px, 8.7vw, 142px);
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar {
+  width: clamp(68px, 5.7vw, 96px);
+}
+
+.project-label {
+  padding: 9px 11px;
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(4, 7, 12, 0.66);
+}
+
+.drag-hint {
+  position: fixed;
+  top: 86px;
+  bottom: auto;
+  left: 50%;
+  right: auto;
+  z-index: 22;
+  width: fit-content;
+  max-width: calc(100vw - 40px);
+  padding: 10px 13px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+}
+
+.drag-hint::before,
+.drag-hint::after {
+  display: none;
+}
+
+.proof-rail {
+  position: fixed;
+  right: auto;
+  bottom: 18px;
+  left: 50%;
+  z-index: 23;
+  width: clamp(330px, 36vw, 560px);
+  padding: 9px;
+  border-radius: 22px;
+  transform: translateX(-50%);
+}
+
+.proof-item {
+  padding: 7px 11px;
+}
+
+.proof-item strong {
+  font-size: 0.98rem;
+}
+
+.proof-item span {
+  font-size: 0.66rem;
+}
+
+.detail-panel {
+  position: fixed;
+  right: clamp(16px, 2.2vw, 34px);
+  bottom: clamp(50px, 5.5vh, 70px);
+  z-index: 25;
+  display: block;
+  width: min(392px, calc(100vw - 40px));
+  min-height: 0;
+  height: auto;
+  max-height: min(64svh, 610px);
+  overflow: auto;
+  border-radius: 30px;
+  scrollbar-width: thin;
+}
+
+.detail-panel .feature-art,
+.detail-panel .network-links {
+  display: none;
+}
+
+.detail-panel::before {
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--project-color, var(--accent)) 22%, transparent), transparent 34%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent 44%);
+}
+
+.panel-inner {
+  grid-template-columns: 1fr;
+  gap: 14px;
+  padding: 18px;
+}
+
+.panel-topline,
+.panel-copy,
+.principles,
+.cta-stack,
+.network-links {
+  grid-column: auto;
+}
+
+.status-pill {
+  padding: 7px 10px;
+  font-size: 0.62rem;
+}
+
+.panel-close {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+}
+
+.panel-copy {
+  gap: 8px;
+}
+
+.panel-kicker {
+  font-size: 0.62rem;
+}
+
+.panel-title {
+  font-size: clamp(1.45rem, 2.15vw, 2.25rem);
+  line-height: 0.98;
+}
+
+.panel-description {
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.principles {
+  gap: 7px;
+}
+
+.principles span {
+  padding: 7px 9px;
+  font-size: 0.74rem;
+}
+
+.panel-metrics {
+  padding: 7px;
+  border-radius: 18px;
+}
+
+.panel-cta {
+  min-height: 46px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.74rem;
+}
+
+.coming-soon-note {
+  padding: 12px;
+  border-radius: 15px;
+  font-size: 0.9rem;
+}
+
+.footer-note {
+  top: 18px;
+  right: auto;
+  bottom: auto;
+  left: 50%;
+  z-index: 41;
+  padding: 9px 12px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.52);
+  transform: translateX(-50%);
+}
+
+@media (max-width: 1180px) {
+  .proof-rail,
+  .drag-hint,
+  .top-kicker,
+  .footer-note {
+    display: none;
+  }
+
+  .orbit-map {
+    inset: 74px clamp(-120px, -7vw, -44px) 80px;
+  }
+
+  .detail-panel {
+    right: 14px;
+    bottom: 14px;
+    max-height: 44svh;
+  }
+
+  .hero-copy {
+    bottom: 18px;
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    overflow: hidden;
+  }
+
+  .app-shell {
+    min-height: 100svh;
+    overflow: hidden;
+  }
+
+  .topbar {
+    inset: 10px 10px auto;
+    align-items: center;
+  }
+
+  .brand-button {
+    max-width: calc(100vw - 20px);
+    padding: 8px 10px 8px 8px;
+    border-radius: 17px;
+  }
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+
+  .brand-title {
+    font-size: 0.7rem;
+    letter-spacing: 0.16em;
+  }
+
+  .brand-subtitle {
+    font-size: 0.51rem;
+    letter-spacing: 0.33em;
+  }
+
+  .mini-nav {
+    position: fixed;
+    right: 10px;
+    bottom: 10px;
+    left: 10px;
+    z-index: 42;
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .mini-nav button {
+    width: 100%;
+    height: 42px;
+    border-radius: 13px;
+  }
+
+  .command-deck,
+  .universe-card {
+    width: 100%;
+    min-height: 100svh;
+    height: 100svh;
+    margin: 0;
+  }
+
+  .hero-copy {
+    top: 66px;
+    right: 10px;
+    bottom: auto;
+    left: 10px;
+    max-width: none;
+    padding: 12px 13px;
+    border-radius: 20px;
+  }
+
+  .eyebrow {
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+  }
+
+  h1 {
+    font-size: clamp(1.25rem, 6.2vw, 1.95rem);
+    line-height: 0.96;
+  }
+
+  .hero-lead {
+    display: none;
+  }
+
+  .orbit-map {
+    position: absolute;
+    inset: 142px -10px 236px;
+    width: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    transform: none;
+  }
+
+  .core-button {
+    width: clamp(144px, 40vw, 190px);
+  }
+
+  .core-label {
+    top: calc(100% - 10px);
+    min-width: 174px;
+    padding: 8px 10px;
+  }
+
+  .core-label strong,
+  .project-name {
+    font-size: 0.58rem;
+    letter-spacing: 0.16em;
+  }
+
+  .core-label span,
+  .project-status {
+    font-size: 0.48rem;
+    letter-spacing: 0.18em;
+  }
+
+  .project-node {
+    width: 94px;
+  }
+
+  .planet-avatar {
+    width: 70px;
+    border-radius: 22px;
+  }
+
+  .project-node[data-project-id="club"] {
+    width: 112px;
+  }
+
+  .project-node[data-project-id="chat"] {
+    width: 106px;
+  }
+
+  .project-node[data-project-id="hytale"] {
+    width: 74px;
+  }
+
+  .project-node[data-project-id="club"] .planet-avatar {
+    width: 88px;
+  }
+
+  .project-node[data-project-id="chat"] .planet-avatar {
+    width: 82px;
+  }
+
+  .project-node[data-project-id="hytale"] .planet-avatar {
+    width: 58px;
+  }
+
+  .project-label {
+    gap: 1px;
+    padding: 6px 7px;
+    border-radius: 12px;
+  }
+
+  .detail-panel {
+    right: 10px;
+    bottom: 70px;
+    left: 10px;
+    width: auto;
+    max-height: 20svh;
+    border-radius: 22px;
+  }
+
+  .panel-inner {
+    gap: 8px;
+    padding: 11px 13px;
+  }
+
+  .panel-title {
+    font-size: 1.1rem;
+    letter-spacing: -0.035em;
+  }
+
+  .panel-description {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 0.8rem;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+  }
+
+  .principles,
+  .panel-metrics {
+    display: none;
+  }
+
+  .cta-stack {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .panel-cta {
+    min-height: 40px;
+    padding: 9px 10px;
+    font-size: 0.62rem;
+  }
+
+  .coming-soon-note {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+}
+
+@media (max-width: 440px) {
+  .mini-nav {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .mini-nav button {
+    height: 38px;
+  }
+
+  .orbit-map {
+    inset: 142px -8px 230px;
+  }
+
+  .detail-panel {
+    max-height: 20svh;
+  }
+}
+
+/* Gravity pass: planets are always highlighted; selection becomes a stronger lock-on state. */
+.orbit-ring {
+  opacity: 0.82;
+  stroke: color-mix(in srgb, var(--project-color, var(--accent)) 52%, rgba(255, 255, 255, 0.32));
+  stroke-width: 1.55;
+  stroke-dasharray: 2 9;
+  vector-effect: non-scaling-stroke;
+}
+
+.orbit-ring.is-active {
+  opacity: 1;
+  stroke: color-mix(in srgb, var(--project-color, var(--accent)) 82%, white 18%);
+  stroke-width: 3;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--project-color, var(--accent)) 72%, transparent));
+}
+
+.orbit-line {
+  opacity: 0.44;
+  stroke: color-mix(in srgb, var(--project-color, var(--accent)) 58%, rgba(255, 255, 255, 0.16));
+  stroke-width: 1.35;
+  stroke-dasharray: 3 10;
+  vector-effect: non-scaling-stroke;
+}
+
+.orbit-line.is-active {
+  opacity: 1;
+  stroke: color-mix(in srgb, var(--project-color, var(--accent)) 86%, white 16%);
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--project-color, var(--accent)) 72%, transparent));
+}
+
+.project-node,
+.project-node.is-dimmed {
+  opacity: 1;
+}
+
+.project-node {
+  width: clamp(126px, 10.2vw, 184px);
+}
+
+.project-node:hover {
+  --node-scale: 1.08;
+}
+
+.project-node.is-active {
+  --node-scale: 1.18;
+  z-index: 12;
+  filter:
+    drop-shadow(0 0 22px color-mix(in srgb, var(--project-color) 70%, transparent))
+    drop-shadow(0 24px 42px rgba(0, 0, 0, 0.36));
+}
+
+.planet-avatar {
+  width: clamp(100px, 8.2vw, 146px);
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--project-color) 70%, rgba(255, 255, 255, 0.38));
+  box-shadow:
+    inset 0 0 34px rgba(255, 255, 255, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.12),
+    0 0 32px color-mix(in srgb, var(--project-color) 34%, transparent),
+    0 20px 54px rgba(0, 0, 0, 0.38);
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar,
+.project-node[data-project-id="space"] .planet-avatar,
+.project-node[data-project-id="fortrust"] .planet-avatar {
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--project-color) 72%, rgba(255, 255, 255, 0.4));
+}
+
+.planet-avatar::before {
+  border-width: 2px;
+}
+
+.planet-avatar::after {
+  inset: -11px;
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--project-color) 60%, rgba(255, 255, 255, 0.3));
+  opacity: 0.72;
+  box-shadow:
+    0 0 24px color-mix(in srgb, var(--project-color) 28%, transparent),
+    inset 0 0 18px rgba(255, 255, 255, 0.05);
+}
+
+.project-node:hover .planet-avatar::after {
+  opacity: 0.88;
+}
+
+.project-node.is-active .planet-avatar {
+  border-color: color-mix(in srgb, var(--project-color) 88%, white 20%);
+  box-shadow:
+    inset 0 0 42px rgba(255, 255, 255, 0.1),
+    0 0 0 2px color-mix(in srgb, var(--project-color) 64%, rgba(255, 255, 255, 0.32)),
+    0 0 46px color-mix(in srgb, var(--project-color) 52%, transparent),
+    0 26px 64px rgba(0, 0, 0, 0.46);
+}
+
+.project-node.is-active .planet-avatar::after {
+  inset: -17px;
+  border-color: color-mix(in srgb, var(--project-color) 86%, white 20%);
+  opacity: 1;
+  box-shadow:
+    0 0 36px color-mix(in srgb, var(--project-color) 54%, transparent),
+    inset 0 0 28px color-mix(in srgb, var(--project-color) 18%, transparent);
+}
+
+.project-label {
+  border-color: color-mix(in srgb, var(--project-color) 48%, rgba(255, 255, 255, 0.24));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--project-color) 12%, transparent), transparent 62%),
+    rgba(4, 7, 12, 0.74);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--project-color) 22%, transparent);
+}
+
+.project-node.is-active .project-label {
+  border-color: color-mix(in srgb, var(--project-color) 82%, white 14%);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--project-color) 22%, transparent), transparent 62%),
+    rgba(4, 7, 12, 0.86);
+}
+
+.project-node[data-project-id="club"] {
+  width: clamp(156px, 13vw, 220px);
+}
+
+.project-node[data-project-id="chat"] {
+  width: clamp(146px, 12vw, 204px);
+}
+
+.project-node[data-project-id="hytale"] {
+  width: clamp(92px, 7.3vw, 126px);
+}
+
+.project-node[data-project-id="club"] .planet-avatar {
+  width: clamp(128px, 10.6vw, 174px);
+}
+
+.project-node[data-project-id="chat"] .planet-avatar {
+  width: clamp(118px, 9.7vw, 160px);
+}
+
+.project-node[data-project-id="hytale"] .planet-avatar {
+  width: clamp(72px, 6.1vw, 104px);
+}
+
+@media (max-width: 760px) {
+  .project-node {
+    width: 104px;
+  }
+
+  .planet-avatar {
+    width: 78px;
+  }
+
+  .project-node[data-project-id="club"] {
+    width: 124px;
+  }
+
+  .project-node[data-project-id="chat"] {
+    width: 116px;
+  }
+
+  .project-node[data-project-id="hytale"] {
+    width: 82px;
+    gap: 5px;
+  }
+
+  .project-node[data-project-id="club"] .planet-avatar {
+    width: 96px;
+  }
+
+  .project-node[data-project-id="chat"] .planet-avatar {
+    width: 90px;
+  }
+
+  .project-node[data-project-id="hytale"] .planet-avatar {
+    width: 62px;
+  }
+
+  .project-node[data-project-id="hytale"] .project-label {
+    display: none;
+  }
+
+  .project-node.is-active {
+    --node-scale: 1.04;
+  }
+
+  .planet-avatar::after {
+    inset: -8px;
+  }
+
+  .project-node.is-active .planet-avatar::after {
+    inset: -9px;
+  }
+}

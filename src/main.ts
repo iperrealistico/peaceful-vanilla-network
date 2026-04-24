@@ -13,6 +13,13 @@ const mount = app;
 const baseUrl = import.meta.env.BASE_URL;
 const selectionOrder: Selection[] = ["network", ...orbitProjects.map((project) => project.id)];
 let selected: Selection = "network";
+const compactOrbitSlots: Record<ProjectId, { x: number; y: number }> = {
+  club: { x: 14, y: 31 },
+  hytale: { x: 50, y: 21 },
+  chat: { x: 88, y: 43 },
+  space: { x: 14, y: 78 },
+  fortrust: { x: 86, y: 78 }
+};
 
 const icons: Record<Selection, string> = {
   network:
@@ -68,17 +75,23 @@ function renderOrbitRings(): string {
   const rings = orbitProjects
     .map((project) => {
       const radiusX = (project.orbitRadius / 100) * 900;
-      const radiusY = (project.orbitRadius * 0.64 * 650) / 100;
+      const radiusY = (project.orbitRadius / 100) * 650;
 
       return `<ellipse class="orbit-ring" data-ring="${project.id}" cx="450" cy="325" rx="${radiusX.toFixed(
         1
       )}" ry="${radiusY.toFixed(1)}" style="--project-color: ${project.color}" />`;
     })
     .join("");
+  const connectors = orbitProjects
+    .map(
+      (project) =>
+        `<line class="orbit-line" data-connector="${project.id}" x1="450" y1="325" x2="450" y2="325" style="--project-color: ${project.color}" />`
+    )
+    .join("");
 
   return `
-    <svg class="orbit-svg" viewBox="0 0 900 650" aria-hidden="true">
-      <line class="orbit-line" id="orbit-line" x1="450" y1="325" x2="450" y2="325" />
+    <svg class="orbit-svg" viewBox="0 0 900 650" preserveAspectRatio="none" aria-hidden="true">
+      ${connectors}
       ${rings}
     </svg>
   `;
@@ -232,7 +245,7 @@ function renderShell(): void {
       <main class="command-deck">
         <section class="universe-card" aria-labelledby="network-title">
           <div class="hero-copy">
-            <p class="eyebrow">Public home - ecosystem map</p>
+            <p class="eyebrow">Live network orbit</p>
             <h1 id="network-title">Community, fun, privacy, and connection.</h1>
             <p class="hero-lead">
               A family-and-friends driven network for gaming worlds, private chat,
@@ -255,7 +268,7 @@ function renderShell(): void {
             </div>
           </div>
 
-          <div class="drag-hint" aria-hidden="true">Use arrows or click an orbit</div>
+          <div class="drag-hint" aria-hidden="true">Click a planet or use arrow keys</div>
           <div class="proof-rail" aria-label="Network proof points">${renderProofItems()}</div>
         </section>
 
@@ -275,7 +288,6 @@ function setSelection(next: Selection): void {
   const project = getProject(selected);
   const shell = document.querySelector<HTMLElement>(".app-shell");
   const panel = document.querySelector<HTMLElement>("#detail-panel");
-  const line = document.querySelector<SVGLineElement>("#orbit-line");
   const projectColor = project?.color ?? "#ff9500";
 
   shell?.setAttribute("data-selected", selected);
@@ -287,7 +299,7 @@ function setSelection(next: Selection): void {
     element.classList.toggle("is-active", isActive);
     if (element instanceof HTMLButtonElement && element.classList.contains("project-node")) {
       element.setAttribute("aria-pressed", String(isActive));
-      element.classList.toggle("is-dimmed", selected !== "network" && !isActive);
+      element.classList.remove("is-dimmed");
     }
   });
 
@@ -297,10 +309,10 @@ function setSelection(next: Selection): void {
     ring.style.setProperty("--project-color", projectColor);
   });
 
-  if (line) {
-    line.classList.toggle("is-visible", selected !== "network");
-    line.style.setProperty("--project-color", projectColor);
-  }
+  document.querySelectorAll<SVGElement>("[data-connector]").forEach((connector) => {
+    const isActive = connector.dataset.connector === selected;
+    connector.classList.toggle("is-active", isActive);
+  });
 
   if (panel) {
     panel.innerHTML = renderPanel();
@@ -348,32 +360,277 @@ function wireInteractions(): void {
 
 function animateOrbit(): void {
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const line = document.querySelector<SVGLineElement>("#orbit-line");
+  const orbitMap = document.querySelector<HTMLElement>("#orbit-map");
+  const pointer = {
+    active: false,
+    x: 0,
+    y: 0
+  };
+
+  type OrbitLayoutNode = {
+    button: HTMLElement;
+    project: OrbitProject;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    baseX: number;
+    baseY: number;
+  };
+
+  type OrbitSafeBounds = {
+    top: number;
+    bottom: number;
+  };
+
+  function clamp(value: number, min: number, max: number): number {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function keepInsideMap(node: OrbitLayoutNode, width: number, height: number, safeBounds: OrbitSafeBounds): void {
+    const margin = 8;
+    const halfWidth = node.width / 2;
+    const halfHeight = node.height / 2;
+
+    if (width > node.width + margin * 2) {
+      node.x = clamp(node.x, halfWidth + margin, width - halfWidth - margin);
+    }
+
+    if (height > node.height + margin * 2) {
+      const minY = halfHeight + margin + safeBounds.top;
+      const maxY = height - halfHeight - margin - safeBounds.bottom;
+      node.y = minY <= maxY ? clamp(node.y, minY, maxY) : height / 2;
+    }
+  }
+
+  function pushFromCore(node: OrbitLayoutNode, width: number, height: number): void {
+    if (width < 760 && node.project.id === "hytale") {
+      return;
+    }
+
+    const core = document.querySelector<HTMLElement>(".core-button");
+    const coreRadius = (core?.offsetWidth ?? Math.min(width, height) * 0.24) / 2;
+    const nodeRadius = Math.max(node.width, node.height) / 2;
+    const isCompactSelectedNode = width < 760 && node.project.id === selected;
+    const minDistance = coreRadius + nodeRadius + (isCompactSelectedNode ? 18 : 90);
+    const centerX = width / 2;
+    const centerY = height / 2;
+    let deltaX = node.x - centerX;
+    let deltaY = node.y - centerY;
+    let distance = Math.hypot(deltaX, deltaY);
+
+    if (distance < 0.001) {
+      deltaX = Math.cos(node.project.initialAngle);
+      deltaY = Math.sin(node.project.initialAngle);
+      distance = 1;
+    }
+
+    if (distance < minDistance) {
+      const push = minDistance - distance;
+      node.x += (deltaX / distance) * push;
+      node.y += (deltaY / distance) * push;
+    }
+
+    const protectedWidth = (core?.offsetWidth ?? Math.min(width, height) * 0.24) + 164;
+    const protectedHeight = (core?.offsetHeight ?? Math.min(width, height) * 0.24) + 126;
+    const boxOverlapX = protectedWidth / 2 + node.width / 2 - Math.abs(deltaX);
+    const boxOverlapY = protectedHeight / 2 + node.height / 2 - Math.abs(deltaY);
+
+    if (boxOverlapX > 0 && boxOverlapY > 0) {
+      const useHorizontalPush = Math.abs(deltaX) > coreRadius * 0.22 || boxOverlapX < boxOverlapY;
+
+      if (useHorizontalPush) {
+        node.x += (deltaX >= 0 ? 1 : -1) * boxOverlapX;
+      } else {
+        node.y += (deltaY >= 0 ? 1 : -1) * boxOverlapY;
+      }
+    }
+  }
+
+  function resolveCollisions(nodes: OrbitLayoutNode[], width: number, height: number, safeBounds: OrbitSafeBounds): void {
+    const iterations = 8;
+
+    for (let iteration = 0; iteration < iterations; iteration += 1) {
+      for (const node of nodes) {
+        pushFromCore(node, width, height);
+        keepInsideMap(node, width, height, safeBounds);
+      }
+
+      for (let i = 0; i < nodes.length; i += 1) {
+        for (let j = i + 1; j < nodes.length; j += 1) {
+          const first = nodes[i];
+          const second = nodes[j];
+
+          if (!first || !second) {
+            continue;
+          }
+
+          let deltaX = second.x - first.x;
+          let deltaY = second.y - first.y;
+          if (Math.hypot(deltaX, deltaY) < 0.001) {
+            const fallbackAngle = (i / Math.max(nodes.length, 1)) * Math.PI * 2;
+            deltaX = Math.cos(fallbackAngle);
+            deltaY = Math.sin(fallbackAngle);
+          }
+
+          const overlapX = first.width / 2 + second.width / 2 + 24 - Math.abs(deltaX);
+          const overlapY = first.height / 2 + second.height / 2 + 24 - Math.abs(deltaY);
+
+          if (overlapX > 0 && overlapY > 0) {
+            const selectedPair = first.project.id === selected || second.project.id === selected;
+            const sameSideColumn =
+              !selectedPair &&
+              ((first.x > width * 0.62 && second.x > width * 0.62) ||
+                (first.x < width * 0.38 && second.x < width * 0.38));
+
+            if (selectedPair || (!sameSideColumn && overlapX < overlapY)) {
+              const directionX = deltaX >= 0 ? 1 : -1;
+              const firstShare = first.project.id === selected ? 0.08 : 1.08;
+              const secondShare = second.project.id === selected ? 0.08 : 1.08;
+              first.x -= directionX * overlapX * firstShare;
+              second.x += directionX * overlapX * secondShare;
+            } else {
+              const directionY = deltaY >= 0 ? 1 : -1;
+              first.y -= directionY * (overlapY / 2);
+              second.y += directionY * (overlapY / 2);
+            }
+          }
+        }
+      }
+
+      for (const node of nodes) {
+        pushFromCore(node, width, height);
+        keepInsideMap(node, width, height, safeBounds);
+      }
+    }
+
+    const selectedNode = nodes.find((node) => node.project.id === selected);
+
+    if (selectedNode) {
+      for (const node of nodes) {
+        if (node === selectedNode) {
+          continue;
+        }
+
+        const deltaX = node.x - selectedNode.x;
+        const deltaY = node.y - selectedNode.y;
+        const overlapX = node.width / 2 + selectedNode.width / 2 + 30 - Math.abs(deltaX);
+        const overlapY = node.height / 2 + selectedNode.height / 2 + 30 - Math.abs(deltaY);
+        const visuallyTooClose = Math.abs(deltaX) < width * 0.28 && Math.abs(deltaY) < height * 0.24;
+
+        if ((overlapX > 0 && overlapY > 0) || visuallyTooClose) {
+          const directionAwayFromEdge = selectedNode.x > width / 2 ? -1 : 1;
+          node.x = selectedNode.x + directionAwayFromEdge * (node.width / 2 + selectedNode.width / 2 + 34);
+          pushFromCore(node, width, height);
+          keepInsideMap(node, width, height, safeBounds);
+        }
+      }
+    }
+  }
+
+  window.addEventListener("pointermove", (event) => {
+    pointer.active = true;
+    pointer.x = event.clientX;
+    pointer.y = event.clientY;
+  });
+
+  window.addEventListener("pointerleave", () => {
+    pointer.active = false;
+  });
 
   function frame(time: number): void {
+    if (!orbitMap) {
+      return;
+    }
+
     const speedFactor = selected === "network" ? 1 : 0.18;
-    const selectedProject = getProject(selected);
+    const mapRect = orbitMap.getBoundingClientRect();
+    const mapWidth = Math.max(mapRect.width, 1);
+    const mapHeight = Math.max(mapRect.height, 1);
+    const heroCopy = document.querySelector<HTMLElement>(".hero-copy");
+    const detailPanel = document.querySelector<HTMLElement>(".detail-panel");
+    const heroRect = heroCopy?.getBoundingClientRect();
+    const panelRect = detailPanel?.getBoundingClientRect();
+    const mobileSafeBounds =
+      window.innerWidth < 760
+        ? {
+            top: heroRect ? clamp(heroRect.bottom - mapRect.top + 10, 0, mapHeight * 0.34) : 0,
+            bottom: panelRect ? clamp(mapRect.bottom - panelRect.top + 10, 0, mapHeight * 0.34) : 0
+          }
+        : { top: 0, bottom: 0 };
+    const compactOrbitScale = mapWidth < 760 ? 0.84 : 1;
+    const orbitRadiusBase = Math.min(mapWidth, mapHeight) * 0.01 * compactOrbitScale;
+    const nodes: OrbitLayoutNode[] = [];
 
     orbitProjects.forEach((project) => {
       const button = document.querySelector<HTMLElement>(`[data-project-id="${project.id}"]`);
+      const ring = document.querySelector<SVGEllipseElement>(`[data-ring="${project.id}"]`);
+
+      if (!button) {
+        return;
+      }
+
       const animatedAngle = reducedMotion
         ? project.initialAngle
         : project.initialAngle + time * project.orbitSpeed * speedFactor;
-      const radiusX = project.orbitRadius;
-      const radiusY = project.orbitRadius * 0.64;
-      const x = 50 + Math.cos(animatedAngle) * radiusX;
-      const y = 50 + Math.sin(animatedAngle) * radiusY;
+      const isCompactOrbit = mapWidth < 760;
+      const radius = project.orbitRadius * orbitRadiusBase;
+      const compactSlot = compactOrbitSlots[project.id];
+      const compactWobble = reducedMotion ? 0 : Math.sin(time * project.orbitSpeed * 1.7 + project.initialAngle) * 2.2;
+      const baseX = isCompactOrbit
+        ? ((compactSlot.x + Math.cos(project.initialAngle) * compactWobble) / 100) * mapWidth
+        : mapWidth / 2 + Math.cos(animatedAngle) * radius;
+      const baseY = isCompactOrbit
+        ? ((compactSlot.y + Math.sin(project.initialAngle) * compactWobble) / 100) * mapHeight
+        : mapHeight / 2 + Math.sin(animatedAngle) * radius;
+      const selectedScale = selected === project.id ? (isCompactOrbit ? 1.04 : 1.18) : 1;
+      const visualHalo = selected === project.id ? (isCompactOrbit ? 44 : 64) : 38;
+      const width = (button.offsetWidth || 120) * selectedScale + visualHalo;
+      const height = (button.offsetHeight || 148) * selectedScale + visualHalo;
+      let x = baseX;
+      let y = baseY;
 
-      button?.style.setProperty("--x", `${x.toFixed(3)}%`);
-      button?.style.setProperty("--y", `${y.toFixed(3)}%`);
+      if (pointer.active && !reducedMotion) {
+        const pointerX = pointer.x - mapRect.left;
+        const pointerY = pointer.y - mapRect.top;
+        const deltaX = pointerX - baseX;
+        const deltaY = pointerY - baseY;
+        const distance = Math.hypot(deltaX, deltaY);
+        const influenceRange = Math.max(180, Math.min(mapWidth, mapHeight) * 0.42);
+        const influence = Math.max(0, 1 - distance / influenceRange) ** 2;
+        const pull = influence * Math.min(32, Math.min(mapWidth, mapHeight) * 0.045);
 
-      if (line && selectedProject?.id === project.id) {
-        line.setAttribute("x1", "450");
-        line.setAttribute("y1", "325");
-        line.setAttribute("x2", ((x / 100) * 900).toFixed(1));
-        line.setAttribute("y2", ((y / 100) * 650).toFixed(1));
+        if (distance > 0.001) {
+          x += (deltaX / distance) * pull;
+          y += (deltaY / distance) * pull;
+        }
       }
+
+      if (ring) {
+        ring.setAttribute("rx", ((radius / mapWidth) * 900).toFixed(1));
+        ring.setAttribute("ry", ((radius / mapHeight) * 650).toFixed(1));
+      }
+
+      nodes.push({ button, project, x, y, width, height, baseX, baseY });
     });
+
+    resolveCollisions(nodes, mapWidth, mapHeight, mobileSafeBounds);
+
+    for (const node of nodes) {
+      const xPercent = (node.x / mapWidth) * 100;
+      const yPercent = (node.y / mapHeight) * 100;
+      const connector = document.querySelector<SVGLineElement>(`[data-connector="${node.project.id}"]`);
+
+      node.button.style.setProperty("--x", `${xPercent.toFixed(3)}%`);
+      node.button.style.setProperty("--y", `${yPercent.toFixed(3)}%`);
+
+      if (connector) {
+        connector.setAttribute("x1", "450");
+        connector.setAttribute("y1", "325");
+        connector.setAttribute("x2", ((xPercent / 100) * 900).toFixed(1));
+        connector.setAttribute("y2", ((yPercent / 100) * 650).toFixed(1));
+      }
+    }
 
     window.requestAnimationFrame(frame);
   }
