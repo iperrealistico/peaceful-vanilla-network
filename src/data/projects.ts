@@ -25,7 +25,7 @@ export interface OrbitProject {
 
 export const networkCore = {
   name: "Peaceful Vanilla Network",
-  tagline: "Community, fun, privacy, and connection.",
+  tagline: "Community, fun, privacy and connection.",
   icon: "assets/generated/peaceful-vanilla-network-icon.png",
   description:
     "Peaceful Vanilla Network is a small-business ecosystem built by family and friends: gaming worlds, chat, profiles, and experiments made for real connection without big-corp nonsense.",
