@@ -593,6 +593,7 @@ p {
   max-height: none;
   overflow: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   border: 1px solid var(--line);
   border-right: 0;
@@ -616,6 +617,7 @@ p {
   backdrop-filter: blur(34px) saturate(1.28);
   -webkit-backdrop-filter: blur(34px) saturate(1.28);
   contain: layout style;
+  will-change: clip-path, transform, opacity;
   transition:
     border-color 260ms ease,
     box-shadow 260ms ease,
@@ -675,7 +677,7 @@ p {
 }
 
 .detail-panel.is-expanded::after {
-  opacity: 0.85;
+  opacity: 0;
 }
 
 .detail-panel.is-collapsed {
@@ -922,6 +924,7 @@ p {
   margin-top: -100svh;
   padding: 0 clamp(14px, 4vw, 48px) clamp(10px, 2vh, 24px);
   pointer-events: none;
+  contain: paint;
   transition:
     filter 260ms ease,
     opacity 260ms ease;
@@ -1334,6 +1337,10 @@ p {
     max-height: min(56svh, 520px);
     border-right: 1px solid var(--line);
     border-radius: 22px;
+  }
+
+  .detail-panel.is-expanded::after {
+    opacity: 0.85;
   }
 
   .panel-copy {

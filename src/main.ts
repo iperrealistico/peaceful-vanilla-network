@@ -50,6 +50,8 @@ const selectionOrder: Selection[] = ["network", ...orbitProjects.map((project) =
 const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 const constellationSpeed = 0.000088;
 const collisionIterations = 3;
+const selectionPauseMs = 260;
+const scrollPauseMs = 140;
 
 let selected: Selection = "network";
 let panelExpanded = false;
@@ -64,7 +66,7 @@ let orbitRuntime: OrbitRuntime[] = [];
 let layoutDirty = true;
 let sceneFrozen = false;
 let lockedScrollY = 0;
-let touchScrollY: number | null = null;
+let motionPauseUntil = 0;
 
 function assetPath(path: string): string {
   return `${baseUrl}${path}`;
@@ -81,6 +83,14 @@ function escapeHtml(value: string): string {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+function pauseSceneMotion(durationMs: number = selectionPauseMs): void {
+  motionPauseUntil = Math.max(motionPauseUntil, performance.now() + durationMs);
+}
+
+function isSceneMotionPaused(time: number): boolean {
+  return sceneFrozen || document.hidden || time < motionPauseUntil;
 }
 
 function statusLabel(status: OrbitProject["status"]): string {
@@ -368,6 +378,13 @@ function setLayoutDirty(): void {
 function observeLayoutChanges(): void {
   window.addEventListener("resize", setLayoutDirty, { passive: true });
   window.addEventListener("orientationchange", setLayoutDirty, { passive: true });
+  window.addEventListener(
+    "scroll",
+    () => {
+      pauseSceneMotion(scrollPauseMs);
+    },
+    { passive: true }
+  );
 
   if ("ResizeObserver" in window) {
     const resizeObserver = new ResizeObserver(setLayoutDirty);
@@ -532,7 +549,6 @@ function unlockDocumentScroll(): void {
   document.body.style.right = "";
   document.body.style.width = "";
   window.scrollTo(0, lockedScrollY);
-  touchScrollY = null;
 }
 
 function syncDocumentScrollLock(): void {
@@ -544,21 +560,11 @@ function syncDocumentScrollLock(): void {
   unlockDocumentScroll();
 }
 
-function scrollDetailPanel(deltaY: number): void {
-  if (!panelExpanded || !detailPanelElement || deltaY === 0) {
-    return;
-  }
-
-  detailPanelElement.scrollBy({
-    top: deltaY,
-    behavior: "auto"
-  });
-}
-
 function setSelection(next: Selection, sourceElement?: HTMLElement): void {
   selected = next;
   panelExpanded = isProjectSelection(selected);
   sceneFrozen = panelExpanded;
+  pauseSceneMotion(panelExpanded ? selectionPauseMs : 180);
 
   const project = getProject(selected);
   const projectColor = project?.color ?? "#ff9500";
@@ -632,59 +638,13 @@ function wireInteractions(): void {
       setSelection("network", coreButtonElement ?? undefined);
     }
   });
-
-  document.addEventListener(
-    "wheel",
-    (event) => {
-      if (!panelExpanded || !detailPanelElement) {
-        return;
-      }
-
-      event.preventDefault();
-      scrollDetailPanel(event.deltaY);
+  detailPanelElement?.addEventListener(
+    "scroll",
+    () => {
+      pauseSceneMotion(scrollPauseMs);
     },
-    { capture: true, passive: false }
+    { passive: true }
   );
-
-  document.addEventListener(
-    "touchstart",
-    (event) => {
-      if (!panelExpanded) {
-        return;
-      }
-
-      touchScrollY = event.touches[0]?.clientY ?? null;
-    },
-    { capture: true, passive: true }
-  );
-
-  document.addEventListener(
-    "touchmove",
-    (event) => {
-      if (!panelExpanded || !detailPanelElement || touchScrollY === null) {
-        return;
-      }
-
-      const nextTouchY = event.touches[0]?.clientY;
-
-      if (nextTouchY === undefined) {
-        return;
-      }
-
-      event.preventDefault();
-      scrollDetailPanel(touchScrollY - nextTouchY);
-      touchScrollY = nextTouchY;
-    },
-    { capture: true, passive: false }
-  );
-
-  document.addEventListener("touchend", () => {
-    touchScrollY = null;
-  });
-
-  document.addEventListener("touchcancel", () => {
-    touchScrollY = null;
-  });
 }
 
 function refreshOrbitLayout(): OrbitLayout | null {
@@ -840,9 +800,12 @@ function animateOrbit(): void {
   let orbitTime = 0;
   let previousFrameTime: number | undefined;
   let layout = refreshOrbitLayout();
+  let previousDynamicScene = false;
 
   function frame(time: number): void {
-    if (layoutDirty || !layout) {
+    const needsLayoutRefresh = layoutDirty || !layout;
+
+    if (needsLayoutRefresh) {
       layout = refreshOrbitLayout();
     }
 
@@ -853,9 +816,10 @@ function animateOrbit(): void {
 
     const delta = previousFrameTime === undefined ? 16.67 : Math.min(time - previousFrameTime, 40);
     previousFrameTime = time;
+    const dynamicScene = !reducedMotionQuery.matches && !isSceneMotionPaused(time);
 
-    if (!sceneFrozen) {
-      orbitTime += reducedMotionQuery.matches ? 0 : delta;
+    if (dynamicScene) {
+      orbitTime += delta;
 
       const baseAngle = orbitTime * constellationSpeed;
 
@@ -866,9 +830,12 @@ function animateOrbit(): void {
       }
 
       solveOrbitCollisions(layout);
+      applyOrbitPositions(layout);
+    } else if (needsLayoutRefresh || dynamicScene !== previousDynamicScene) {
+      applyOrbitPositions(layout);
     }
 
-    applyOrbitPositions(layout);
+    previousDynamicScene = dynamicScene;
     window.requestAnimationFrame(frame);
   }
 
@@ -888,7 +855,7 @@ function createStars(count: number): Star[] {
 
 function startStarfield(): void {
   const canvas = document.querySelector<HTMLCanvasElement>("#starfield");
-  const context = canvas?.getContext("2d");
+  const context = canvas?.getContext("2d", { alpha: false }) ?? canvas?.getContext("2d");
 
   if (!canvas || !context) {
     return;
@@ -900,6 +867,7 @@ function startStarfield(): void {
   let width = 0;
   let height = 0;
   let lastDraw = 0;
+  let previousDynamicScene = false;
 
   function resize(): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -936,11 +904,16 @@ function startStarfield(): void {
   }
 
   function tick(time: number): void {
-    if (time - lastDraw >= 40) {
+    const dynamicScene = !reducedMotionQuery.matches && !isSceneMotionPaused(time);
+
+    if (dynamicScene && time - lastDraw >= 40) {
       lastDraw = time;
       draw(time);
+    } else if (!dynamicScene && previousDynamicScene) {
+      draw(lastDraw || time);
     }
 
+    previousDynamicScene = dynamicScene;
     window.requestAnimationFrame(tick);
   }
 
