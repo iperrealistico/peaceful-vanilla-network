@@ -657,14 +657,23 @@ function refreshOrbitLayout(): OrbitLayout | null {
   const mapRect = orbitMap.getBoundingClientRect();
   const mapWidth = Math.max(orbitMap.clientWidth || mapRect.width, 1);
   const mapHeight = Math.max(orbitMap.clientHeight || mapRect.height, 1);
+  const aspectRatio = mapWidth / mapHeight;
   const compact = mapWidth < 760;
-  const centerX = mapWidth / 2;
-  const centerY = mapHeight / 2;
+  const wideBias = clamp((aspectRatio - 1.26) / 0.54, 0, 1);
+  const tallBias = clamp((0.92 - aspectRatio) / 0.28, 0, 1);
+  const centerBiasX = wideBias * Math.min(mapWidth * 0.055, 62);
+  const centerBiasY = -tallBias * Math.min(mapHeight * 0.05, 42);
+  const centerX = mapWidth / 2 + centerBiasX;
+  const centerY = mapHeight / 2 + centerBiasY;
   const coreRadius = (coreButtonElement?.offsetWidth ?? Math.min(mapWidth, mapHeight) * 0.24) / 2;
   const edgeMargin = compact ? 8 : 18;
   const coreMargin = compact ? 10 : 26;
   const orbitSquash = compact ? 1.18 : 0.88;
   const orbitRadiusBase = Math.min(mapWidth, mapHeight) * (compact ? 0.0108 : 0.0114);
+
+  shellElement?.style.setProperty("--orbit-bias-x", `${centerBiasX.toFixed(1)}px`);
+  shellElement?.style.setProperty("--orbit-bias-y", `${centerBiasY.toFixed(1)}px`);
+
   const layout: OrbitLayout = {
     width: mapWidth,
     height: mapHeight,

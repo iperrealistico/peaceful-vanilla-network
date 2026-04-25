@@ -938,6 +938,12 @@ p {
   padding-bottom: clamp(6px, 1vh, 18px);
 }
 
+@media (min-width: 1121px) {
+  .story-title-block {
+    transform: translateX(calc(var(--orbit-bias-x, 0px) * -0.16));
+  }
+}
+
 .story-kicker {
   margin: 0 0 10px;
   color: var(--accent-soft);
