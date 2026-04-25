@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --open /app.html",
-    "build": "tsc && vite build && node scripts/prepare-pages.mjs",
-    "export:root": "npm run build && node scripts/sync-root-from-dist.mjs",
+    "build:dist": "tsc && vite build && node scripts/prepare-pages.mjs",
+    "build": "npm run build:dist && node scripts/sync-root-from-dist.mjs",
+    "export:root": "npm run build",
     "preview": "vite preview --host 0.0.0.0"
   },
   "devDependencies": {
