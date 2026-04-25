@@ -271,11 +271,11 @@ function renderNetworkStory(): string {
   return `
     <section class="network-story" aria-labelledby="network-story-title">
       <div class="story-title-block">
+        <p class="story-kicker">${escapeHtml(networkCore.tagline)}</p>
         <h2 id="network-story-title">
           <span>Peaceful Vanilla</span>
           <span>Network</span>
         </h2>
-        <p class="story-tagline">${escapeHtml(networkCore.tagline)}</p>
       </div>
 
       <article class="network-story-card" aria-label="${escapeHtml(networkCore.name)} overview">

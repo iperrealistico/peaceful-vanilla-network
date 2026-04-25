@@ -1114,7 +1114,7 @@ p {
   position: relative;
   align-self: end;
   display: grid;
-  gap: 10px;
+  gap: 8px;
   width: min(1180px, 100%);
   margin: 0 auto;
   padding-bottom: clamp(6px, 1vh, 18px);
@@ -1124,6 +1124,25 @@ p {
   .story-title-block {
     transform: translateX(calc(var(--orbit-bias-x, 0px) * -0.16));
   }
+}
+
+.story-kicker {
+  width: fit-content;
+  margin: 0;
+  color: var(--accent-soft);
+  font-family: var(--font-mono);
+  font-size: clamp(0.62rem, 1.2vw, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  text-shadow: 0 0 18px rgba(255, 149, 0, 0.36);
+  opacity: 0;
+  transform: translateY(16px);
+  filter: blur(8px);
+  transition:
+    opacity calc(var(--intro-title-ms) * 0.84) ease,
+    transform calc(var(--intro-title-ms) * 0.84) var(--intro-title-ease),
+    filter calc(var(--intro-title-ms) * 0.84) ease;
 }
 
 .story-title-block h2 {
@@ -1159,20 +1178,15 @@ p {
   display: block;
 }
 
-.story-tagline {
-  max-width: 28ch;
-  margin: 0;
-  color: color-mix(in srgb, var(--text) 88%, var(--accent-soft) 12%);
-  font-size: clamp(0.92rem, 2vw, 1.28rem);
-  line-height: 1.3;
-  letter-spacing: 0.01em;
-  opacity: 0;
-  transform: translateY(18px);
-  filter: blur(10px);
-  transition:
-    opacity var(--intro-tagline-ms) ease,
-    transform var(--intro-tagline-ms) var(--intro-title-ease),
-    filter var(--intro-tagline-ms) ease;
+.app-shell[data-intro-phase="title"] .story-kicker,
+.app-shell[data-intro-phase="tagline"] .story-kicker,
+.app-shell[data-intro-phase="ready"] .story-kicker,
+.app-shell[data-intro-phase="title"] .story-title-block h2,
+.app-shell[data-intro-phase="tagline"] .story-title-block h2,
+.app-shell[data-intro-phase="ready"] .story-title-block h2 {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
 }
 
 .app-shell[data-intro-phase="title"] .story-title-block h2,
@@ -1182,13 +1196,6 @@ p {
   opacity: 0.94;
   transform: translateY(0);
   filter: blur(0) drop-shadow(0 0 18px rgba(255, 255, 255, 0.08));
-}
-
-.app-shell[data-intro-phase="tagline"] .story-tagline,
-.app-shell[data-intro-phase="ready"] .story-tagline {
-  opacity: 1;
-  transform: translateY(0);
-  filter: blur(0);
 }
 
 .app-shell[data-intro-ready="false"] .network-story-card {
@@ -1677,6 +1684,10 @@ p {
     max-width: 9ch;
   }
 
+  .story-kicker {
+    font-size: clamp(0.58rem, 1.9vw, 0.72rem);
+  }
+
   .network-story-card {
     width: calc(100vw - 24px);
     min-height: calc(100svh - 24px);
@@ -1864,9 +1875,8 @@ p {
     font-size: clamp(2rem, 12vw, 3.55rem);
   }
 
-  .story-tagline {
-    max-width: 22ch;
-    font-size: 0.88rem;
+  .story-kicker {
+    font-size: 0.62rem;
   }
 
   .network-story-card {
