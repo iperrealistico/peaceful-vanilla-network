@@ -37,6 +37,8 @@ interface Star {
   tone: number;
   twinkle: number;
   speed: number;
+  revealDelay: number;
+  revealDuration: number;
 }
 
 interface IntroSequence {
@@ -71,19 +73,19 @@ const selectionPauseMs = 260;
 const scrollPauseMs = 140;
 const introPhaseOrder: IntroPhase[] = ["sun", "sky", "planets", "settle", "title", "tagline", "ready"];
 const INTRO_SEQUENCE: IntroSequence = {
-  totalMs: 3000,
-  sunMs: 360,
-  skyDelayMs: 180,
-  skyMs: 760,
-  planetsDelayMs: 900,
-  planetStaggerMs: 90,
-  planetPopMs: 340,
-  settleDelayMs: 1760,
-  settleMs: 620,
-  titleDelayMs: 2340,
-  titleMs: 360,
-  taglineDelayMs: 2700,
-  taglineMs: 220
+  totalMs: 5000,
+  sunMs: 520,
+  skyDelayMs: 320,
+  skyMs: 2100,
+  planetsDelayMs: 1740,
+  planetStaggerMs: 135,
+  planetPopMs: 720,
+  settleDelayMs: 3220,
+  settleMs: 1120,
+  titleDelayMs: 3660,
+  titleMs: 920,
+  taglineDelayMs: 4320,
+  taglineMs: 520
 };
 
 let selected: Selection = "network";
@@ -97,6 +99,7 @@ let coreButtonElement: HTMLButtonElement | null = null;
 let selectedProjectLayerElement: HTMLElement | null = null;
 let selectedProjectClone: HTMLElement | null = null;
 let orbitRuntime: OrbitRuntime[] = [];
+let lastOrbitLayout: OrbitLayout | null = null;
 let layoutDirty = true;
 let sceneFrozen = false;
 let lockedScrollY = 0;
@@ -104,6 +107,7 @@ let motionPauseUntil = 0;
 let introPhase: IntroPhase = "sun";
 let introReady = false;
 let introTimeoutIds: number[] = [];
+let introStartedAt = 0;
 
 function resolveIntroSequence(sequence: IntroSequence): IntroSequence {
   const rawTailMs = Math.max(
@@ -154,8 +158,20 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
 
+function easeOutCubic(value: number): number {
+  return 1 - Math.pow(1 - value, 3);
+}
+
 function hasReachedIntroPhase(phase: IntroPhase): boolean {
   return introPhaseOrder.indexOf(introPhase) >= introPhaseOrder.indexOf(phase);
+}
+
+function getIntroProgress(time: number, delayMs: number, durationMs: number): number {
+  if (introStartedAt === 0) {
+    return 0;
+  }
+
+  return clamp((time - introStartedAt - delayMs) / Math.max(durationMs, 1), 0, 1);
 }
 
 function pauseSceneMotion(durationMs: number = selectionPauseMs): void {
@@ -507,6 +523,7 @@ function clearIntroSequence(): void {
 
 function startIntroSequence(): void {
   clearIntroSequence();
+  introStartedAt = performance.now();
   setIntroPhase("sun");
 
   const schedule: Array<{ phase: IntroPhase; at: number }> = [
@@ -587,14 +604,11 @@ function setPanelRevealOrigin(panel: HTMLElement, sourceRect: DOMRectReadOnly | 
 }
 
 function getSelectedShowcasePosition(layout: OrbitLayout): { x: number; y: number } {
-  const panelRect = detailPanelElement?.getBoundingClientRect();
-  const desktopRailOpen = panelExpanded && panelRect !== undefined && window.innerWidth >= 920;
-  const sceneRight = desktopRailOpen ? panelRect.left : window.innerWidth;
-  const sceneBottom = panelExpanded && panelRect !== undefined && window.innerWidth < 920 ? panelRect.top : window.innerHeight;
-  const x = desktopRailOpen ? clamp(sceneRight * 0.5, 150, Math.max(150, sceneRight - 150)) : clamp(sceneRight * 0.5, 96, sceneRight - 96);
-  const y = desktopRailOpen
-    ? clamp(window.innerHeight * 0.5, 150, Math.max(150, window.innerHeight - 150))
-    : clamp(sceneBottom * 0.5, 98, Math.max(98, sceneBottom - 112));
+  const desktop = window.innerWidth >= 920;
+  const x = desktop ? clamp(window.innerWidth * 0.3, 240, 520) : window.innerWidth * 0.5;
+  const y = desktop
+    ? clamp(window.innerHeight * 0.5, 170, Math.max(170, window.innerHeight - 170))
+    : clamp(window.innerHeight * 0.31, 132, Math.max(132, window.innerHeight * 0.38));
 
   return {
     x: Number.isFinite(x) ? x : layout.offsetLeft + layout.centerX,
@@ -670,6 +684,12 @@ function syncSelectedProjectClone(): void {
     clone.style.setProperty("--project-color", activeRuntime.project.color);
     layer.replaceChildren(clone);
     selectedProjectClone = clone;
+  }
+
+  if (selectedProjectClone && lastOrbitLayout) {
+    const showcase = getSelectedShowcasePosition(lastOrbitLayout);
+    selectedProjectClone.style.setProperty("--tx", `${showcase.x.toFixed(1)}px`);
+    selectedProjectClone.style.setProperty("--ty", `${showcase.y.toFixed(1)}px`);
   }
 
   layer.classList.add("has-selection");
@@ -835,8 +855,10 @@ function refreshOrbitLayout(): OrbitLayout | null {
   const compact = mapWidth < 760;
   const wideBias = clamp((aspectRatio - 1.26) / 0.54, 0, 1);
   const tallBias = clamp((0.92 - aspectRatio) / 0.28, 0, 1);
-  const sceneOffsetX = wideBias * Math.min(mapWidth * 0.055, 62);
-  const sceneOffsetY = -tallBias * Math.min(mapHeight * 0.05, 42);
+  const desktopNudgeX = compact ? 0 : Math.min(mapWidth * 0.014, 18);
+  const mobileLiftY = compact ? Math.min(mapHeight * 0.03, 20) : 0;
+  const sceneOffsetX = wideBias * Math.min(mapWidth * 0.082, 104) + desktopNudgeX;
+  const sceneOffsetY = -tallBias * Math.min(mapHeight * 0.068, 56) - mobileLiftY;
   const centerX = mapWidth / 2;
   const centerY = mapHeight / 2;
   const coreRadius = (coreButtonElement?.offsetWidth ?? Math.min(mapWidth, mapHeight) * 0.24) / 2;
@@ -863,6 +885,8 @@ function refreshOrbitLayout(): OrbitLayout | null {
     coreMargin,
     compact
   };
+
+  lastOrbitLayout = layout;
 
   for (const runtime of orbitRuntime) {
     const selectedScale = selected === runtime.project.id ? (compact ? 1.08 : 1.22) : 1;
@@ -1034,13 +1058,15 @@ function createStars(count: number): Star[] {
     size: 0.45 + Math.random() * 1.9,
     tone: Math.random(),
     twinkle: Math.random() * Math.PI * 2,
-    speed: 0.0007 + Math.random() * 0.0012
+    speed: 0.0007 + Math.random() * 0.0012,
+    revealDelay: Math.random() * 1050,
+    revealDuration: 180 + Math.random() * 760
   }));
 }
 
 function startStarfield(): void {
   const canvas = document.querySelector<HTMLCanvasElement>("#starfield");
-  const context = canvas?.getContext("2d", { alpha: false }) ?? canvas?.getContext("2d");
+  const context = canvas?.getContext("2d");
 
   if (!canvas || !context) {
     return;
@@ -1069,19 +1095,31 @@ function startStarfield(): void {
   function draw(time: number): void {
     starContext.clearRect(0, 0, width, height);
 
-    const gradient = starContext.createRadialGradient(width * 0.5, height * 0.45, 0, width * 0.5, height * 0.45, width * 0.72);
-    gradient.addColorStop(0, "rgba(255, 149, 0, 0.13)");
-    gradient.addColorStop(0.34, "rgba(80, 124, 190, 0.06)");
-    gradient.addColorStop(1, "rgba(3, 5, 10, 0)");
-    starContext.fillStyle = gradient;
-    starContext.fillRect(0, 0, width, height);
+    const titleGlowProgress = easeOutCubic(getIntroProgress(time, introSequence.titleDelayMs, introSequence.titleMs + 820));
+
+    if (titleGlowProgress > 0) {
+      const gradient = starContext.createRadialGradient(width * 0.5, height * 0.45, 0, width * 0.5, height * 0.45, width * 0.72);
+      gradient.addColorStop(0, `rgba(255, 149, 0, ${(0.11 * titleGlowProgress).toFixed(3)})`);
+      gradient.addColorStop(0.34, `rgba(80, 124, 190, ${(0.075 * titleGlowProgress).toFixed(3)})`);
+      gradient.addColorStop(1, "rgba(3, 5, 10, 0)");
+      starContext.fillStyle = gradient;
+      starContext.fillRect(0, 0, width, height);
+    }
 
     for (const star of stars) {
       const color = star.tone > 0.82 ? "255, 149, 0" : star.tone > 0.66 ? "80, 124, 190" : "247, 249, 252";
       const twinkle = reducedMotionQuery.matches
         ? 0.66 + Math.sin(time * star.speed * 0.35 + star.twinkle) * 0.08
         : 0.45 + Math.sin(time * star.speed + star.twinkle) * 0.28;
-      const alpha = clamp(twinkle + (star.tone > 0.78 ? 0.16 : 0), 0.16, 0.88);
+      const revealProgress = easeOutCubic(
+        clamp((time - introStartedAt - introSequence.titleDelayMs - star.revealDelay) / star.revealDuration, 0, 1)
+      );
+
+      if (revealProgress <= 0) {
+        continue;
+      }
+
+      const alpha = clamp((twinkle + (star.tone > 0.78 ? 0.16 : 0)) * revealProgress, 0.05, 0.88);
 
       starContext.beginPath();
       starContext.fillStyle = `rgba(${color}, ${alpha.toFixed(3)})`;
@@ -1091,7 +1129,7 @@ function startStarfield(): void {
   }
 
   function tick(time: number): void {
-    const dynamicScene = hasReachedIntroPhase("planets") && !isSceneMotionPaused(time);
+    const dynamicScene = hasReachedIntroPhase("title") && !isSceneMotionPaused(time);
     const framePauseMs = reducedMotionQuery.matches ? 120 : 40;
 
     if (dynamicScene && time - lastDraw >= framePauseMs) {

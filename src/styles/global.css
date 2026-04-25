@@ -92,23 +92,23 @@ p {
 }
 
 .app-shell {
-  --intro-total-ms: 3000ms;
-  --intro-sun-ms: 360ms;
-  --intro-sky-delay-ms: 180ms;
-  --intro-sky-ms: 760ms;
-  --intro-planets-delay-ms: 900ms;
-  --intro-planet-stagger-ms: 90ms;
-  --intro-planet-pop-ms: 340ms;
-  --intro-settle-delay-ms: 1760ms;
-  --intro-settle-ms: 620ms;
-  --intro-title-delay-ms: 2340ms;
-  --intro-title-ms: 360ms;
-  --intro-tagline-delay-ms: 2700ms;
-  --intro-tagline-ms: 220ms;
-  --intro-sun-ease: cubic-bezier(0.22, 1.18, 0.3, 1);
-  --intro-sky-ease: cubic-bezier(0.22, 1.18, 0.36, 1);
-  --intro-planet-ease: cubic-bezier(0.18, 1.3, 0.28, 1);
-  --intro-settle-ease: cubic-bezier(0.2, 1.1, 0.28, 1);
+  --intro-total-ms: 5000ms;
+  --intro-sun-ms: 520ms;
+  --intro-sky-delay-ms: 320ms;
+  --intro-sky-ms: 2100ms;
+  --intro-planets-delay-ms: 1740ms;
+  --intro-planet-stagger-ms: 135ms;
+  --intro-planet-pop-ms: 720ms;
+  --intro-settle-delay-ms: 3220ms;
+  --intro-settle-ms: 1120ms;
+  --intro-title-delay-ms: 3660ms;
+  --intro-title-ms: 920ms;
+  --intro-tagline-delay-ms: 4320ms;
+  --intro-tagline-ms: 520ms;
+  --intro-sun-ease: cubic-bezier(0.16, 1.22, 0.24, 1);
+  --intro-sky-ease: cubic-bezier(0.18, 1.24, 0.22, 1);
+  --intro-planet-ease: cubic-bezier(0.16, 1.34, 0.24, 1);
+  --intro-settle-ease: cubic-bezier(0.16, 1.26, 0.22, 1);
   --intro-title-ease: cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   min-height: 100svh;
@@ -129,18 +129,23 @@ p {
     radial-gradient(circle at 50% 46%, rgba(255, 214, 164, 0.72), rgba(255, 255, 255, 0.94) 18%, #fff 58%),
     #fff;
   opacity: 1;
-  transition: opacity 260ms ease;
+  transition: opacity 720ms ease;
 }
 
 .cosmos-backdrop {
   z-index: 1;
   overflow: hidden;
   clip-path: circle(0 at 50% 50%);
+  opacity: 0;
+  transform: scale(0.82);
+  transform-origin: 50% 50%;
+  filter: saturate(0.78);
 }
 
 .cosmos-gradient {
   position: absolute;
   inset: 0;
+  z-index: 0;
   background:
     radial-gradient(circle at 50% 48%, rgba(255, 149, 0, 0.18), transparent 24%),
     radial-gradient(circle at 19% 76%, rgba(255, 194, 107, 0.09), transparent 22%),
@@ -179,10 +184,11 @@ p {
 .starfield {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  z-index: 1;
   width: 100%;
   height: 100%;
-  transition: opacity 260ms ease;
+  opacity: 0;
+  transition: opacity 1200ms ease;
 }
 
 .command-deck {
@@ -283,7 +289,14 @@ p {
 .app-shell[data-intro-phase="tagline"] .cosmos-backdrop,
 .app-shell[data-intro-phase="ready"] .cosmos-backdrop {
   clip-path: circle(160vmax at 50% 50%);
-  transition: clip-path var(--intro-sky-ms) var(--intro-sky-ease);
+  opacity: 1;
+  transform: scale(1);
+  filter: saturate(1);
+  transition:
+    clip-path var(--intro-sky-ms) var(--intro-sky-ease),
+    opacity calc(var(--intro-sky-ms) * 0.68) ease,
+    transform var(--intro-sky-ms) var(--intro-sky-ease),
+    filter calc(var(--intro-sky-ms) * 0.78) ease;
 }
 
 .app-shell[data-intro-phase="settle"] .orbit-scene,
@@ -296,6 +309,12 @@ p {
 .app-shell[data-intro-phase="ready"] .orbit-scene,
 .app-shell[data-intro-ready="true"] .orbit-scene {
   transform: translate3d(var(--scene-settle-x), var(--scene-settle-y), 0);
+}
+
+.app-shell[data-intro-phase="title"] .starfield,
+.app-shell[data-intro-phase="tagline"] .starfield,
+.app-shell[data-intro-phase="ready"] .starfield {
+  opacity: 1;
 }
 
 .orbit-svg {
@@ -1467,14 +1486,18 @@ p {
 @keyframes introSunEnter {
   0% {
     opacity: 0;
-    transform: translate(-50%, -50%) scale(0.42);
-    filter: blur(18px);
+    transform: translate(-50%, -50%) scale(0.36);
+    filter: blur(26px);
   }
 
-  58% {
+  52% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.08);
+    transform: translate(-50%, -50%) scale(1.11);
     filter: blur(0);
+  }
+
+  72% {
+    transform: translate(-50%, -50%) scale(0.97);
   }
 
   100% {
@@ -1487,19 +1510,25 @@ p {
 @keyframes introPlanetPop {
   0% {
     opacity: 0;
-    transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(0.18);
-    filter: blur(10px);
+    transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(0.08);
+    filter: blur(14px);
   }
 
-  60% {
+  54% {
     opacity: 1;
-    transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(1.17);
+    transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(1.22);
     filter: blur(0);
   }
 
-  78% {
+  72% {
     opacity: 1;
-    transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(0.94);
+    transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(0.92);
+    filter: blur(0);
+  }
+
+  86% {
+    opacity: 1;
+    transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(1.04);
     filter: blur(0);
   }
 
