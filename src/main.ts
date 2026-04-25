@@ -2,6 +2,7 @@ import { networkCore, orbitProjects, type OrbitProject, type ProjectId } from ".
 import "./styles/global.css";
 
 type Selection = "network" | ProjectId;
+type IntroPhase = "sun" | "sky" | "planets" | "settle" | "title" | "tagline" | "ready";
 
 interface OrbitRuntime {
   project: OrbitProject;
@@ -38,6 +39,22 @@ interface Star {
   speed: number;
 }
 
+interface IntroSequence {
+  totalMs: number;
+  sunMs: number;
+  skyDelayMs: number;
+  skyMs: number;
+  planetsDelayMs: number;
+  planetStaggerMs: number;
+  planetPopMs: number;
+  settleDelayMs: number;
+  settleMs: number;
+  titleDelayMs: number;
+  titleMs: number;
+  taglineDelayMs: number;
+  taglineMs: number;
+}
+
 const app = document.querySelector<HTMLDivElement>("#app");
 
 if (!app) {
@@ -52,6 +69,22 @@ const constellationSpeed = 0.000088;
 const collisionIterations = 3;
 const selectionPauseMs = 260;
 const scrollPauseMs = 140;
+const introPhaseOrder: IntroPhase[] = ["sun", "sky", "planets", "settle", "title", "tagline", "ready"];
+const INTRO_SEQUENCE: IntroSequence = {
+  totalMs: 3000,
+  sunMs: 360,
+  skyDelayMs: 180,
+  skyMs: 760,
+  planetsDelayMs: 900,
+  planetStaggerMs: 90,
+  planetPopMs: 340,
+  settleDelayMs: 1760,
+  settleMs: 620,
+  titleDelayMs: 2340,
+  titleMs: 360,
+  taglineDelayMs: 2700,
+  taglineMs: 220
+};
 
 let selected: Selection = "network";
 let panelExpanded = false;
@@ -59,6 +92,7 @@ let lastRevealSourceRect: DOMRectReadOnly | null = null;
 let shellElement: HTMLElement | null = null;
 let detailPanelElement: HTMLElement | null = null;
 let orbitMapElement: HTMLElement | null = null;
+let orbitSceneElement: HTMLElement | null = null;
 let coreButtonElement: HTMLButtonElement | null = null;
 let selectedProjectLayerElement: HTMLElement | null = null;
 let selectedProjectClone: HTMLElement | null = null;
@@ -67,6 +101,41 @@ let layoutDirty = true;
 let sceneFrozen = false;
 let lockedScrollY = 0;
 let motionPauseUntil = 0;
+let introPhase: IntroPhase = "sun";
+let introReady = false;
+let introTimeoutIds: number[] = [];
+
+function resolveIntroSequence(sequence: IntroSequence): IntroSequence {
+  const rawTailMs = Math.max(
+    sequence.sunMs,
+    sequence.skyDelayMs + sequence.skyMs,
+    sequence.planetsDelayMs + sequence.planetPopMs + Math.max(orbitProjects.length - 1, 0) * sequence.planetStaggerMs,
+    sequence.settleDelayMs + sequence.settleMs,
+    sequence.titleDelayMs + sequence.titleMs,
+    sequence.taglineDelayMs + sequence.taglineMs,
+    1
+  );
+  const scale = sequence.totalMs / rawTailMs;
+  const scaleTiming = (value: number): number => Math.round(value * scale);
+
+  return {
+    totalMs: Math.round(sequence.totalMs),
+    sunMs: scaleTiming(sequence.sunMs),
+    skyDelayMs: scaleTiming(sequence.skyDelayMs),
+    skyMs: scaleTiming(sequence.skyMs),
+    planetsDelayMs: scaleTiming(sequence.planetsDelayMs),
+    planetStaggerMs: scaleTiming(sequence.planetStaggerMs),
+    planetPopMs: scaleTiming(sequence.planetPopMs),
+    settleDelayMs: scaleTiming(sequence.settleDelayMs),
+    settleMs: scaleTiming(sequence.settleMs),
+    titleDelayMs: scaleTiming(sequence.titleDelayMs),
+    titleMs: scaleTiming(sequence.titleMs),
+    taglineDelayMs: scaleTiming(sequence.taglineDelayMs),
+    taglineMs: scaleTiming(sequence.taglineMs)
+  };
+}
+
+const introSequence = resolveIntroSequence(INTRO_SEQUENCE);
 
 function assetPath(path: string): string {
   return `${baseUrl}${path}`;
@@ -83,6 +152,10 @@ function escapeHtml(value: string): string {
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
+}
+
+function hasReachedIntroPhase(phase: IntroPhase): boolean {
+  return introPhaseOrder.indexOf(introPhase) >= introPhaseOrder.indexOf(phase);
 }
 
 function pauseSceneMotion(durationMs: number = selectionPauseMs): void {
@@ -142,7 +215,7 @@ function renderOrbitRings(): string {
 function renderProjectNodes(): string {
   return orbitProjects
     .map(
-      (project) => `
+      (project, index) => `
         <button
           type="button"
           class="project-node"
@@ -150,7 +223,7 @@ function renderProjectNodes(): string {
           data-project-id="${project.id}"
           aria-label="Show ${escapeHtml(project.name)}"
           aria-pressed="false"
-          style="--project-color: ${project.color}"
+          style="--project-color: ${project.color}; --intro-order: ${index}"
         >
           <span class="planet-avatar" aria-hidden="true">
             <img src="${assetPath(project.icon)}" alt="" loading="eager" />
@@ -182,8 +255,11 @@ function renderNetworkStory(): string {
   return `
     <section class="network-story" aria-labelledby="network-story-title">
       <div class="story-title-block">
-        <p class="story-kicker">${escapeHtml(networkCore.tagline)}</p>
-        <h2 id="network-story-title">${escapeHtml(networkCore.name)}</h2>
+        <h2 id="network-story-title">
+          <span>Peaceful Vanilla</span>
+          <span>Network</span>
+        </h2>
+        <p class="story-tagline">${escapeHtml(networkCore.tagline)}</p>
       </div>
 
       <article class="network-story-card" aria-label="${escapeHtml(networkCore.name)} overview">
@@ -309,25 +385,38 @@ function renderPanel(): string {
 
 function renderShell(): void {
   mount.innerHTML = `
-    <div class="app-shell" style="--project-color: var(--accent)" data-selected="network" data-panel-expanded="false">
-      <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
+    <div
+      class="app-shell"
+      style="--project-color: var(--accent)"
+      data-selected="network"
+      data-panel-expanded="false"
+      data-intro-phase="sun"
+      data-intro-ready="false"
+    >
+      <div class="intro-surface" aria-hidden="true"></div>
+      <div class="cosmos-backdrop" aria-hidden="true">
+        <canvas class="starfield" id="starfield" aria-hidden="true"></canvas>
+        <div class="cosmos-gradient"></div>
+      </div>
 
       <main class="command-deck">
         <section class="universe-card" aria-labelledby="network-title">
           <h1 id="network-title" class="visually-hidden">${escapeHtml(networkCore.name)}</h1>
 
           <div class="orbit-map" id="orbit-map" tabindex="0" role="application" aria-label="Interactive Peaceful Vanilla Network orbit">
-            ${renderOrbitRings()}
-            <button type="button" class="core-button" data-select="network" aria-label="Show ${escapeHtml(networkCore.name)} overview">
-              <span class="core-aura" aria-hidden="true"></span>
-              <img src="${assetPath(networkCore.icon)}" alt="" />
-              <span class="core-label">
-                <strong>${escapeHtml(networkCore.name.toUpperCase())}</strong>
-                <span>${escapeHtml(networkCore.tagline)}</span>
-              </span>
-            </button>
-            <div class="project-layer" id="project-layer">
-              ${renderProjectNodes()}
+            <div class="orbit-scene" id="orbit-scene">
+              ${renderOrbitRings()}
+              <button type="button" class="core-button" data-select="network" aria-label="Show ${escapeHtml(networkCore.name)} overview">
+                <span class="core-aura" aria-hidden="true"></span>
+                <img src="${assetPath(networkCore.icon)}" alt="" />
+                <span class="core-label">
+                  <strong>${escapeHtml(networkCore.name.toUpperCase())}</strong>
+                  <span>${escapeHtml(networkCore.tagline)}</span>
+                </span>
+              </button>
+              <div class="project-layer" id="project-layer">
+                ${renderProjectNodes()}
+              </div>
             </div>
           </div>
         </section>
@@ -348,6 +437,7 @@ function cacheRuntimeElements(): void {
   shellElement = mount.querySelector<HTMLElement>(".app-shell");
   detailPanelElement = mount.querySelector<HTMLElement>("#detail-panel");
   orbitMapElement = mount.querySelector<HTMLElement>("#orbit-map");
+  orbitSceneElement = mount.querySelector<HTMLElement>("#orbit-scene");
   coreButtonElement = mount.querySelector<HTMLButtonElement>(".core-button");
   selectedProjectLayerElement = mount.querySelector<HTMLElement>(".selected-project-layer");
   orbitRuntime = orbitProjects.map((project, index) => {
@@ -369,6 +459,70 @@ function cacheRuntimeElements(): void {
       y: 0
     };
   });
+}
+
+function applyIntroSequenceVariables(): void {
+  if (!shellElement) {
+    return;
+  }
+
+  shellElement.style.setProperty("--intro-total-ms", `${introSequence.totalMs}ms`);
+  shellElement.style.setProperty("--intro-sun-ms", `${introSequence.sunMs}ms`);
+  shellElement.style.setProperty("--intro-sky-delay-ms", `${introSequence.skyDelayMs}ms`);
+  shellElement.style.setProperty("--intro-sky-ms", `${introSequence.skyMs}ms`);
+  shellElement.style.setProperty("--intro-planets-delay-ms", `${introSequence.planetsDelayMs}ms`);
+  shellElement.style.setProperty("--intro-planet-stagger-ms", `${introSequence.planetStaggerMs}ms`);
+  shellElement.style.setProperty("--intro-planet-pop-ms", `${introSequence.planetPopMs}ms`);
+  shellElement.style.setProperty("--intro-settle-delay-ms", `${introSequence.settleDelayMs}ms`);
+  shellElement.style.setProperty("--intro-settle-ms", `${introSequence.settleMs}ms`);
+  shellElement.style.setProperty("--intro-title-delay-ms", `${introSequence.titleDelayMs}ms`);
+  shellElement.style.setProperty("--intro-title-ms", `${introSequence.titleMs}ms`);
+  shellElement.style.setProperty("--intro-tagline-delay-ms", `${introSequence.taglineDelayMs}ms`);
+  shellElement.style.setProperty("--intro-tagline-ms", `${introSequence.taglineMs}ms`);
+}
+
+function syncIntroState(): void {
+  shellElement?.setAttribute("data-intro-phase", introPhase);
+  shellElement?.setAttribute("data-intro-ready", String(introReady));
+
+  if (orbitMapElement) {
+    orbitMapElement.toggleAttribute("inert", !introReady);
+  }
+}
+
+function setIntroPhase(nextPhase: IntroPhase): void {
+  introPhase = nextPhase;
+  introReady = nextPhase === "ready";
+  syncIntroState();
+  syncDocumentScrollLock();
+}
+
+function clearIntroSequence(): void {
+  for (const timeoutId of introTimeoutIds) {
+    window.clearTimeout(timeoutId);
+  }
+
+  introTimeoutIds = [];
+}
+
+function startIntroSequence(): void {
+  clearIntroSequence();
+  setIntroPhase("sun");
+
+  const schedule: Array<{ phase: IntroPhase; at: number }> = [
+    { phase: "sky", at: introSequence.skyDelayMs },
+    { phase: "planets", at: introSequence.planetsDelayMs },
+    { phase: "settle", at: introSequence.settleDelayMs },
+    { phase: "title", at: introSequence.titleDelayMs },
+    { phase: "tagline", at: introSequence.taglineDelayMs },
+    { phase: "ready", at: introSequence.totalMs }
+  ];
+
+  introTimeoutIds = schedule.map(({ phase, at }) =>
+    window.setTimeout(() => {
+      setIntroPhase(phase);
+    }, at)
+  );
 }
 
 function setLayoutDirty(): void {
@@ -552,7 +706,7 @@ function unlockDocumentScroll(): void {
 }
 
 function syncDocumentScrollLock(): void {
-  if (panelExpanded) {
+  if (panelExpanded || !introReady) {
     lockDocumentScroll();
     return;
   }
@@ -601,6 +755,10 @@ function selectByOffset(offset: number): void {
 
 function wireInteractions(): void {
   document.addEventListener("click", (event) => {
+    if (!introReady) {
+      return;
+    }
+
     const clickedElement = event.target instanceof Element ? event.target : null;
     const target = clickedElement?.closest<HTMLElement>("[data-select]") ?? null;
     const next = target?.dataset.select as Selection | undefined;
@@ -616,6 +774,14 @@ function wireInteractions(): void {
   });
 
   orbitMapElement?.addEventListener("keydown", (event) => {
+    if (!introReady) {
+      if (event.key === "Tab") {
+        event.preventDefault();
+      }
+
+      return;
+    }
+
     if (event.key === "ArrowRight" || event.key === "ArrowDown") {
       event.preventDefault();
       selectByOffset(1);
@@ -633,6 +799,14 @@ function wireInteractions(): void {
   });
 
   document.addEventListener("keydown", (event) => {
+    if (!introReady) {
+      if (event.key === "Tab") {
+        event.preventDefault();
+      }
+
+      return;
+    }
+
     if (event.key === "Escape" && panelExpanded) {
       event.preventDefault();
       setSelection("network", coreButtonElement ?? undefined);
@@ -661,18 +835,20 @@ function refreshOrbitLayout(): OrbitLayout | null {
   const compact = mapWidth < 760;
   const wideBias = clamp((aspectRatio - 1.26) / 0.54, 0, 1);
   const tallBias = clamp((0.92 - aspectRatio) / 0.28, 0, 1);
-  const centerBiasX = wideBias * Math.min(mapWidth * 0.055, 62);
-  const centerBiasY = -tallBias * Math.min(mapHeight * 0.05, 42);
-  const centerX = mapWidth / 2 + centerBiasX;
-  const centerY = mapHeight / 2 + centerBiasY;
+  const sceneOffsetX = wideBias * Math.min(mapWidth * 0.055, 62);
+  const sceneOffsetY = -tallBias * Math.min(mapHeight * 0.05, 42);
+  const centerX = mapWidth / 2;
+  const centerY = mapHeight / 2;
   const coreRadius = (coreButtonElement?.offsetWidth ?? Math.min(mapWidth, mapHeight) * 0.24) / 2;
   const edgeMargin = compact ? 8 : 18;
   const coreMargin = compact ? 10 : 26;
   const orbitSquash = compact ? 1.18 : 0.88;
   const orbitRadiusBase = Math.min(mapWidth, mapHeight) * (compact ? 0.0108 : 0.0114);
 
-  shellElement?.style.setProperty("--orbit-bias-x", `${centerBiasX.toFixed(1)}px`);
-  shellElement?.style.setProperty("--orbit-bias-y", `${centerBiasY.toFixed(1)}px`);
+  shellElement?.style.setProperty("--orbit-bias-x", `${sceneOffsetX.toFixed(1)}px`);
+  shellElement?.style.setProperty("--orbit-bias-y", `${sceneOffsetY.toFixed(1)}px`);
+  orbitSceneElement?.style.setProperty("--scene-settle-x", `${sceneOffsetX.toFixed(1)}px`);
+  orbitSceneElement?.style.setProperty("--scene-settle-y", `${sceneOffsetY.toFixed(1)}px`);
 
   const layout: OrbitLayout = {
     width: mapWidth,
@@ -825,12 +1001,12 @@ function animateOrbit(): void {
 
     const delta = previousFrameTime === undefined ? 16.67 : Math.min(time - previousFrameTime, 40);
     previousFrameTime = time;
-    const dynamicScene = !reducedMotionQuery.matches && !isSceneMotionPaused(time);
+    const dynamicScene = hasReachedIntroPhase("planets") && !isSceneMotionPaused(time);
 
     if (dynamicScene) {
       orbitTime += delta;
 
-      const baseAngle = orbitTime * constellationSpeed;
+      const baseAngle = orbitTime * (reducedMotionQuery.matches ? constellationSpeed * 0.28 : constellationSpeed);
 
       for (const runtime of orbitRuntime) {
         const angle = baseAngle + runtime.slotAngle;
@@ -902,7 +1078,9 @@ function startStarfield(): void {
 
     for (const star of stars) {
       const color = star.tone > 0.82 ? "255, 149, 0" : star.tone > 0.66 ? "80, 124, 190" : "247, 249, 252";
-      const twinkle = reducedMotionQuery.matches ? 0.72 : 0.45 + Math.sin(time * star.speed + star.twinkle) * 0.28;
+      const twinkle = reducedMotionQuery.matches
+        ? 0.66 + Math.sin(time * star.speed * 0.35 + star.twinkle) * 0.08
+        : 0.45 + Math.sin(time * star.speed + star.twinkle) * 0.28;
       const alpha = clamp(twinkle + (star.tone > 0.78 ? 0.16 : 0), 0.16, 0.88);
 
       starContext.beginPath();
@@ -913,9 +1091,10 @@ function startStarfield(): void {
   }
 
   function tick(time: number): void {
-    const dynamicScene = !reducedMotionQuery.matches && !isSceneMotionPaused(time);
+    const dynamicScene = hasReachedIntroPhase("planets") && !isSceneMotionPaused(time);
+    const framePauseMs = reducedMotionQuery.matches ? 120 : 40;
 
-    if (dynamicScene && time - lastDraw >= 40) {
+    if (dynamicScene && time - lastDraw >= framePauseMs) {
       lastDraw = time;
       draw(time);
     } else if (!dynamicScene && previousDynamicScene) {
@@ -928,16 +1107,15 @@ function startStarfield(): void {
 
   window.addEventListener("resize", resize, { passive: true });
   resize();
-
-  if (!reducedMotionQuery.matches) {
-    window.requestAnimationFrame(tick);
-  }
+  window.requestAnimationFrame(tick);
 }
 
 renderShell();
 cacheRuntimeElements();
+applyIntroSequenceVariables();
 observeLayoutChanges();
 wireInteractions();
 setSelection("network");
+startIntroSequence();
 animateOrbit();
 startStarfield();
