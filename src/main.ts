@@ -3,6 +3,8 @@ import "./styles/global.css";
 
 type Selection = "network" | ProjectId;
 type IntroPhase = "sun" | "sky" | "planets" | "settle" | "title" | "tagline" | "ready";
+type IntroPlayback = "full" | "quick";
+type IntroRevealState = "idle" | "quick-prep" | "quick-active";
 
 interface OrbitRuntime {
   project: OrbitProject;
@@ -71,6 +73,8 @@ const constellationSpeed = 0.000088;
 const collisionIterations = 3;
 const selectionPauseMs = 260;
 const scrollPauseMs = 140;
+const introFreshLoadThresholdPx = 24;
+const quickRevealDurationMs = 220;
 const introPhaseOrder: IntroPhase[] = ["sun", "sky", "planets", "settle", "title", "tagline", "ready"];
 const INTRO_SEQUENCE: IntroSequence = {
   totalMs: 5000,
@@ -106,8 +110,13 @@ let lockedScrollY = 0;
 let motionPauseUntil = 0;
 let introPhase: IntroPhase = "sun";
 let introReady = false;
+let introPlayback: IntroPlayback = "full";
+let introRevealState: IntroRevealState = "idle";
 let introTimeoutIds: number[] = [];
 let introStartedAt = 0;
+let introQuickRevealFrameId = 0;
+let introQuickRevealTimeoutId = 0;
+let lastIntroTopState = true;
 
 function resolveIntroSequence(sequence: IntroSequence): IntroSequence {
   const rawTailMs = Math.max(
@@ -172,6 +181,10 @@ function getIntroProgress(time: number, delayMs: number, durationMs: number): nu
   }
 
   return clamp((time - introStartedAt - delayMs) / Math.max(durationMs, 1), 0, 1);
+}
+
+function isAtIntroResetPosition(useFreshLoadTolerance: boolean = false): boolean {
+  return window.scrollY <= (useFreshLoadTolerance ? introFreshLoadThresholdPx : 0);
 }
 
 function pauseSceneMotion(durationMs: number = selectionPauseMs): void {
@@ -408,6 +421,8 @@ function renderShell(): void {
       data-panel-expanded="false"
       data-intro-phase="sun"
       data-intro-ready="false"
+      data-intro-playback="full"
+      data-intro-reveal="idle"
     >
       <div class="intro-surface" aria-hidden="true"></div>
       <div class="cosmos-backdrop" aria-hidden="true">
@@ -500,6 +515,8 @@ function applyIntroSequenceVariables(): void {
 function syncIntroState(): void {
   shellElement?.setAttribute("data-intro-phase", introPhase);
   shellElement?.setAttribute("data-intro-ready", String(introReady));
+  shellElement?.setAttribute("data-intro-playback", introPlayback);
+  shellElement?.setAttribute("data-intro-reveal", introRevealState);
 
   if (orbitMapElement) {
     orbitMapElement.toggleAttribute("inert", !introReady);
@@ -521,8 +538,23 @@ function clearIntroSequence(): void {
   introTimeoutIds = [];
 }
 
+function clearQuickRevealSequence(): void {
+  if (introQuickRevealFrameId) {
+    window.cancelAnimationFrame(introQuickRevealFrameId);
+    introQuickRevealFrameId = 0;
+  }
+
+  if (introQuickRevealTimeoutId) {
+    window.clearTimeout(introQuickRevealTimeoutId);
+    introQuickRevealTimeoutId = 0;
+  }
+}
+
 function startIntroSequence(): void {
   clearIntroSequence();
+  clearQuickRevealSequence();
+  introPlayback = "full";
+  introRevealState = "idle";
   introStartedAt = performance.now();
   setIntroPhase("sun");
 
@@ -542,6 +574,50 @@ function startIntroSequence(): void {
   );
 }
 
+function startQuickRevealSequence(): void {
+  clearIntroSequence();
+  clearQuickRevealSequence();
+  introPlayback = "quick";
+  introRevealState = "quick-prep";
+  introStartedAt = 0;
+  setIntroPhase("ready");
+
+  if (!shellElement) {
+    return;
+  }
+
+  shellElement.getBoundingClientRect();
+  introQuickRevealFrameId = window.requestAnimationFrame(() => {
+    introQuickRevealFrameId = 0;
+    introRevealState = "quick-active";
+    syncIntroState();
+
+    introQuickRevealTimeoutId = window.setTimeout(() => {
+      introQuickRevealTimeoutId = 0;
+      introRevealState = "idle";
+      syncIntroState();
+    }, quickRevealDurationMs + 40);
+  });
+}
+
+function syncIntroPlaybackToScroll(force: boolean = false, useFreshLoadTolerance: boolean = false): void {
+  const atResetPosition = isAtIntroResetPosition(useFreshLoadTolerance);
+
+  if (!force && atResetPosition === lastIntroTopState) {
+    return;
+  }
+
+  lastIntroTopState = atResetPosition;
+  setLayoutDirty();
+
+  if (atResetPosition) {
+    startIntroSequence();
+    return;
+  }
+
+  startQuickRevealSequence();
+}
+
 function setLayoutDirty(): void {
   layoutDirty = true;
 }
@@ -553,6 +629,7 @@ function observeLayoutChanges(): void {
     "scroll",
     () => {
       pauseSceneMotion(scrollPauseMs);
+      syncIntroPlaybackToScroll();
     },
     { passive: true }
   );
@@ -726,7 +803,7 @@ function unlockDocumentScroll(): void {
 }
 
 function syncDocumentScrollLock(): void {
-  if (panelExpanded || !introReady) {
+  if (panelExpanded) {
     lockDocumentScroll();
     return;
   }
@@ -1154,6 +1231,10 @@ applyIntroSequenceVariables();
 observeLayoutChanges();
 wireInteractions();
 setSelection("network");
-startIntroSequence();
 animateOrbit();
 startStarfield();
+lastIntroTopState = isAtIntroResetPosition(true);
+syncIntroPlaybackToScroll(true, true);
+window.requestAnimationFrame(() => {
+  syncIntroPlaybackToScroll(false, true);
+});

@@ -125,35 +125,25 @@ p {
 
 .intro-surface {
   z-index: 0;
-  background:
-    radial-gradient(circle at 50% 46%, rgba(255, 214, 164, 0.72), rgba(255, 255, 255, 0.94) 18%, #fff 58%),
-    #fff;
+  background: #fff;
   opacity: 1;
-  transition: opacity 720ms ease;
 }
 
 .cosmos-backdrop {
   z-index: 1;
   overflow: hidden;
   clip-path: circle(0 at 50% 50%);
-  opacity: 0;
-  transform: scale(0.82);
-  transform-origin: 50% 50%;
-  filter: saturate(0.78);
+  background: #03050a;
 }
 
 .cosmos-gradient {
   position: absolute;
   inset: 0;
   z-index: 0;
-  background:
-    radial-gradient(circle at 50% 48%, rgba(255, 149, 0, 0.18), transparent 24%),
-    radial-gradient(circle at 19% 76%, rgba(255, 194, 107, 0.09), transparent 22%),
-    radial-gradient(circle at 80% 22%, rgba(80, 124, 190, 0.13), transparent 26%),
-    linear-gradient(140deg, #03050a 0%, #06080d 48%, #0a1018 100%);
+  background: #03050a;
 }
 
-.app-shell[data-intro-ready="true"] .intro-surface {
+.app-shell[data-intro-playback="quick"] .intro-surface {
   opacity: 0;
 }
 
@@ -198,6 +188,8 @@ p {
   width: 100%;
   height: 100svh;
   min-height: 100svh;
+  opacity: 1;
+  transition: opacity 220ms ease;
 }
 
 .command-deck::after {
@@ -282,21 +274,23 @@ p {
   opacity: 0;
 }
 
-.app-shell[data-intro-phase="sky"] .cosmos-backdrop,
-.app-shell[data-intro-phase="planets"] .cosmos-backdrop,
-.app-shell[data-intro-phase="settle"] .cosmos-backdrop,
-.app-shell[data-intro-phase="title"] .cosmos-backdrop,
-.app-shell[data-intro-phase="tagline"] .cosmos-backdrop,
-.app-shell[data-intro-phase="ready"] .cosmos-backdrop {
+.app-shell[data-intro-playback="full"][data-intro-phase="sky"] .cosmos-backdrop,
+.app-shell[data-intro-playback="full"][data-intro-phase="planets"] .cosmos-backdrop,
+.app-shell[data-intro-playback="full"][data-intro-phase="settle"] .cosmos-backdrop,
+.app-shell[data-intro-playback="full"][data-intro-phase="title"] .cosmos-backdrop,
+.app-shell[data-intro-playback="full"][data-intro-phase="tagline"] .cosmos-backdrop,
+.app-shell[data-intro-playback="full"][data-intro-phase="ready"] .cosmos-backdrop {
   clip-path: circle(160vmax at 50% 50%);
-  opacity: 1;
-  transform: scale(1);
-  filter: saturate(1);
-  transition:
-    clip-path var(--intro-sky-ms) var(--intro-sky-ease),
-    opacity calc(var(--intro-sky-ms) * 0.68) ease,
-    transform var(--intro-sky-ms) var(--intro-sky-ease),
-    filter calc(var(--intro-sky-ms) * 0.78) ease;
+  transition: clip-path var(--intro-sky-ms) var(--intro-sky-ease);
+}
+
+.app-shell[data-intro-playback="quick"] .cosmos-backdrop {
+  clip-path: circle(160vmax at 50% 50%);
+}
+
+.app-shell[data-intro-playback="quick"][data-intro-reveal="quick-prep"] .command-deck,
+.app-shell[data-intro-playback="quick"][data-intro-reveal="quick-prep"] .network-story {
+  opacity: 0;
 }
 
 .app-shell[data-intro-phase="settle"] .orbit-scene,
