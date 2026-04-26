@@ -37,6 +37,7 @@ interface Star {
   y: number;
   size: number;
   tone: number;
+  color: string;
   twinkle: number;
   speed: number;
   revealDelay: number;
@@ -75,6 +76,7 @@ const selectionPauseMs = 260;
 const scrollPauseMs = 140;
 const introFreshLoadThresholdPx = 24;
 const quickRevealDurationMs = 220;
+const introBootstrapDelayMs = 120;
 const introPhaseOrder: IntroPhase[] = ["sun", "sky", "planets", "settle", "title", "tagline", "ready"];
 const INTRO_SEQUENCE: IntroSequence = {
   totalMs: 5000,
@@ -116,7 +118,8 @@ let introTimeoutIds: number[] = [];
 let introStartedAt = 0;
 let introQuickRevealFrameId = 0;
 let introQuickRevealTimeoutId = 0;
-let lastIntroTopState = true;
+let introBootstrapResolved = false;
+let introBootstrapTimeoutId = 0;
 
 function resolveIntroSequence(sequence: IntroSequence): IntroSequence {
   const rawTailMs = Math.max(
@@ -183,7 +186,7 @@ function getIntroProgress(time: number, delayMs: number, durationMs: number): nu
   return clamp((time - introStartedAt - delayMs) / Math.max(durationMs, 1), 0, 1);
 }
 
-function isAtIntroResetPosition(useFreshLoadTolerance: boolean = false): boolean {
+function isAtIntroFreshLoadPosition(useFreshLoadTolerance: boolean = false): boolean {
   return window.scrollY <= (useFreshLoadTolerance ? introFreshLoadThresholdPx : 0);
 }
 
@@ -550,6 +553,13 @@ function clearQuickRevealSequence(): void {
   }
 }
 
+function clearIntroBootstrapTimeout(): void {
+  if (introBootstrapTimeoutId) {
+    window.clearTimeout(introBootstrapTimeoutId);
+    introBootstrapTimeoutId = 0;
+  }
+}
+
 function startIntroSequence(): void {
   clearIntroSequence();
   clearQuickRevealSequence();
@@ -600,17 +610,16 @@ function startQuickRevealSequence(): void {
   });
 }
 
-function syncIntroPlaybackToScroll(force: boolean = false, useFreshLoadTolerance: boolean = false): void {
-  const atResetPosition = isAtIntroResetPosition(useFreshLoadTolerance);
-
-  if (!force && atResetPosition === lastIntroTopState) {
+function resolveInitialIntroPlayback(useFreshLoadTolerance: boolean = false): void {
+  if (introBootstrapResolved) {
     return;
   }
 
-  lastIntroTopState = atResetPosition;
+  introBootstrapResolved = true;
+  clearIntroBootstrapTimeout();
   setLayoutDirty();
 
-  if (atResetPosition) {
+  if (isAtIntroFreshLoadPosition(useFreshLoadTolerance)) {
     startIntroSequence();
     return;
   }
@@ -629,7 +638,6 @@ function observeLayoutChanges(): void {
     "scroll",
     () => {
       pauseSceneMotion(scrollPauseMs);
-      syncIntroPlaybackToScroll();
     },
     { passive: true }
   );
@@ -1084,6 +1092,7 @@ function applyOrbitPositions(layout: OrbitLayout): void {
 
 function animateOrbit(): void {
   let orbitTime = 0;
+  let motionAccumulator = 0;
   let previousFrameTime: number | undefined;
   let layout = refreshOrbitLayout();
   let previousDynamicScene = false;
@@ -1103,9 +1112,19 @@ function animateOrbit(): void {
     const delta = previousFrameTime === undefined ? 16.67 : Math.min(time - previousFrameTime, 40);
     previousFrameTime = time;
     const dynamicScene = hasReachedIntroPhase("planets") && !isSceneMotionPaused(time);
+    const orbitFrameMs = reducedMotionQuery.matches ? 80 : 32;
 
     if (dynamicScene) {
-      orbitTime += delta;
+      motionAccumulator += delta;
+
+      if (motionAccumulator < orbitFrameMs) {
+        previousDynamicScene = dynamicScene;
+        window.requestAnimationFrame(frame);
+        return;
+      }
+
+      orbitTime += motionAccumulator;
+      motionAccumulator = 0;
 
       const baseAngle = orbitTime * (reducedMotionQuery.matches ? constellationSpeed * 0.28 : constellationSpeed);
 
@@ -1134,6 +1153,7 @@ function createStars(count: number): Star[] {
     y: Math.random(),
     size: 0.45 + Math.random() * 1.9,
     tone: Math.random(),
+    color: Math.random() > 0.82 ? "255, 149, 0" : Math.random() > 0.66 ? "80, 124, 190" : "247, 249, 252",
     twinkle: Math.random() * Math.PI * 2,
     speed: 0.0007 + Math.random() * 0.0012,
     revealDelay: Math.random() * 1050,
@@ -1151,14 +1171,14 @@ function startStarfield(): void {
 
   const starCanvas = canvas;
   const starContext = context;
-  const stars = createStars(170);
+  const stars = createStars(window.innerWidth < 760 ? 68 : 96);
   let width = 0;
   let height = 0;
   let lastDraw = 0;
   let previousDynamicScene = false;
 
   function resize(): void {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
     width = window.innerWidth;
     height = window.innerHeight;
     starCanvas.width = Math.floor(width * dpr);
@@ -1176,18 +1196,17 @@ function startStarfield(): void {
 
     if (titleGlowProgress > 0) {
       const gradient = starContext.createRadialGradient(width * 0.5, height * 0.45, 0, width * 0.5, height * 0.45, width * 0.72);
-      gradient.addColorStop(0, `rgba(255, 149, 0, ${(0.11 * titleGlowProgress).toFixed(3)})`);
-      gradient.addColorStop(0.34, `rgba(80, 124, 190, ${(0.075 * titleGlowProgress).toFixed(3)})`);
+      gradient.addColorStop(0, `rgba(255, 149, 0, ${(0.075 * titleGlowProgress).toFixed(3)})`);
+      gradient.addColorStop(0.34, `rgba(80, 124, 190, ${(0.05 * titleGlowProgress).toFixed(3)})`);
       gradient.addColorStop(1, "rgba(3, 5, 10, 0)");
       starContext.fillStyle = gradient;
       starContext.fillRect(0, 0, width, height);
     }
 
     for (const star of stars) {
-      const color = star.tone > 0.82 ? "255, 149, 0" : star.tone > 0.66 ? "80, 124, 190" : "247, 249, 252";
       const twinkle = reducedMotionQuery.matches
-        ? 0.66 + Math.sin(time * star.speed * 0.35 + star.twinkle) * 0.08
-        : 0.45 + Math.sin(time * star.speed + star.twinkle) * 0.28;
+        ? 0.72 + Math.sin(time * star.speed * 0.22 + star.twinkle) * 0.05
+        : 0.54 + Math.sin(time * star.speed * 0.72 + star.twinkle) * 0.18;
       const revealProgress = easeOutCubic(
         clamp((time - introStartedAt - introSequence.titleDelayMs - star.revealDelay) / star.revealDuration, 0, 1)
       );
@@ -1196,18 +1215,21 @@ function startStarfield(): void {
         continue;
       }
 
-      const alpha = clamp((twinkle + (star.tone > 0.78 ? 0.16 : 0)) * revealProgress, 0.05, 0.88);
+      const alpha = clamp((twinkle + (star.tone > 0.78 ? 0.14 : 0)) * revealProgress, 0.08, 0.8);
 
       starContext.beginPath();
-      starContext.fillStyle = `rgba(${color}, ${alpha.toFixed(3)})`;
+      starContext.fillStyle = `rgba(${star.color}, ${alpha.toFixed(3)})`;
       starContext.arc(star.x * width, star.y * height, star.size, 0, Math.PI * 2);
       starContext.fill();
     }
   }
 
   function tick(time: number): void {
-    const dynamicScene = hasReachedIntroPhase("title") && !isSceneMotionPaused(time);
-    const framePauseMs = reducedMotionQuery.matches ? 120 : 40;
+    const dynamicScene =
+      ((introPlayback === "full" && hasReachedIntroPhase("title")) ||
+        (introPlayback === "quick" && introRevealState !== "quick-prep")) &&
+      !isSceneMotionPaused(time);
+    const framePauseMs = introReady ? (reducedMotionQuery.matches ? 180 : 110) : reducedMotionQuery.matches ? 160 : 95;
 
     if (dynamicScene && time - lastDraw >= framePauseMs) {
       lastDraw = time;
@@ -1233,8 +1255,17 @@ wireInteractions();
 setSelection("network");
 animateOrbit();
 startStarfield();
-lastIntroTopState = isAtIntroResetPosition(true);
-syncIntroPlaybackToScroll(true, true);
-window.requestAnimationFrame(() => {
-  syncIntroPlaybackToScroll(false, true);
-});
+window.addEventListener(
+  "pageshow",
+  () => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        resolveInitialIntroPlayback(true);
+      });
+    });
+  },
+  { once: true }
+);
+introBootstrapTimeoutId = window.setTimeout(() => {
+  resolveInitialIntroPlayback(true);
+}, introBootstrapDelayMs);

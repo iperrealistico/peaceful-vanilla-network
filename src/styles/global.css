@@ -431,6 +431,11 @@ p {
   animation: corePulse 3.8s ease-in-out infinite;
 }
 
+.app-shell[data-intro-ready="false"] .core-aura,
+.app-shell[data-intro-ready="false"] .planet-avatar::after {
+  animation-play-state: paused;
+}
+
 .core-button img {
   position: relative;
   width: 78%;
@@ -1488,7 +1493,7 @@ p {
   0% {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.36);
-    filter: blur(26px);
+    filter: blur(10px);
   }
 
   52% {
@@ -1512,7 +1517,7 @@ p {
   0% {
     opacity: 0;
     transform: translate3d(var(--tx), var(--ty), 0) translate(-50%, -50%) scale(0.08);
-    filter: blur(14px);
+    filter: blur(6px);
   }
 
   54% {
