@@ -296,26 +296,25 @@ function renderNetworkStory(): string {
         <div class="story-feature-grid" aria-label="What Peaceful Vanilla Network does">
           <section>
             <span>01</span>
-            <h4>Connects the projects</h4>
-            <p>Links Club, Hytale, Chat, Space, and experiments into one discoverable network.</p>
+            <h4>The Network that connects</h4>
+            <p>We are the team behind Club, Hytale, Chat, Space, and more. One single discoverable network.</p>
           </section>
           <section>
             <span>02</span>
-            <h4>Protects the culture</h4>
-            <p>Keeps the family-and-friends, no big-corp, no pay-to-win philosophy visible.</p>
+            <h4>The Network that protects</h4>
+            <p>We keep evil big tech out. We believe in a family-and-friends way of working and ethical entrepreneuring. No big-corps involved.</p>
           </section>
           <section>
             <span>03</span>
-            <h4>Builds privacy-first spaces</h4>
-            <p>Favors self-hosted, low-friction community tools over invasive platform lock-in.</p>
+            <h4>The Network that builds privacy-first</h4>
+            <p>Favors self-hosted, low-friction community tools over invasive platforms.</p>
           </section>
           <section>
             <span>04</span>
-            <h4>Gives ideas room</h4>
-            <p>Lets new web layers and experiments launch without blurring the core network.</p>
+            <h4>The Network that gives weird ideas room</h4>
+            <p>We love to explore new weird ideas related to gaming and social platforms.</p>
           </section>
         </div>
-
       </article>
     </section>
   `;
