@@ -80,16 +80,12 @@ export const orbitProjects: OrbitProject[] = [
     domainLabel: "peacefulvanilla.chat",
     description:
       "A Matrix-powered, self-hosted communication platform where players, creators, family groups, and friends stay connected without face scans, personal documents, or big-platform lock-in.",
-    status: "live",
+    status: "coming-soon",
     icon: "assets/logos/peaceful-vanilla-chat-icon-256.png",
     color: "#507cbe",
     orbitRadius: 37,
     orbitSpeed: 0.000095,
-    initialAngle: -0.42,
-    primaryCta: {
-      label: "Visit Chat",
-      href: "https://www.peacefulvanilla.chat/"
-    }
+    initialAngle: -0.42
   },
   {
     id: "space",
