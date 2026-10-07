@@ -5,7 +5,8 @@ export interface OrbitProject {
   id: ProjectId;
   name: string;
   domainLabel: string;
-  tagline: string;
+  tagline?: string;
+  destinationNote?: string;
   description: string;
   status: ProjectStatus;
   icon: string;
@@ -43,7 +44,6 @@ export const orbitProjects: OrbitProject[] = [
     id: "club",
     name: "Peaceful Vanilla Club",
     domainLabel: "peacefulvanilla.club",
-    tagline: "The fun-first gaming world.",
     description:
       "A family-and-friends driven Minecraft SMP with a stable world, cross-play support, strong community culture, and a clear no pay-to-win philosophy.",
     status: "live",
@@ -61,7 +61,6 @@ export const orbitProjects: OrbitProject[] = [
     id: "hytale",
     name: "Peaceful Vanilla Club: Hytale",
     domainLabel: "hytale.peacefulvanilla.club",
-    tagline: "The Hytale vanilla server branch.",
     description:
       "A dedicated Hytale-facing home for Peaceful Vanilla Club, carrying the same fun-first community spirit, long-term mindset, and no pay-to-win philosophy into a new world.",
     status: "live",
@@ -73,17 +72,12 @@ export const orbitProjects: OrbitProject[] = [
     primaryCta: {
       label: "Visit Hytale",
       href: "https://hytale.peacefulvanilla.club/"
-    },
-    secondaryCta: {
-      label: "Visit Club",
-      href: "https://www.peacefulvanilla.club/"
     }
   },
   {
     id: "chat",
     name: "Peaceful Vanilla Chat",
     domainLabel: "peacefulvanilla.chat",
-    tagline: "Private connection without big-corp baggage.",
     description:
       "A Matrix-powered, self-hosted communication platform where players, creators, family groups, and friends stay connected without face scans, personal documents, or big-platform lock-in.",
     status: "live",
@@ -95,10 +89,6 @@ export const orbitProjects: OrbitProject[] = [
     primaryCta: {
       label: "Visit Chat",
       href: "https://www.peacefulvanilla.chat/"
-    },
-    secondaryCta: {
-      label: "Enter App",
-      href: "https://app.peacefulvanilla.chat"
     }
   },
   {
@@ -106,6 +96,8 @@ export const orbitProjects: OrbitProject[] = [
     name: "Peaceful Vanilla Space",
     domainLabel: "peacefulvanilla.space",
     tagline: "Profiles, hubs, and social connection.",
+    destinationNote:
+      "This orbit is visible because it belongs to the network, but its public destination is not linked yet.",
     description:
       "A coming Peaceful Vanilla web layer for profiles, community hubs, and social surfaces that make the wider network easier to discover and more fun to explore.",
     status: "coming-soon",
@@ -119,9 +111,8 @@ export const orbitProjects: OrbitProject[] = [
     id: "fortrust",
     name: "Fortrust",
     domainLabel: "Fortrust by Peaceful Vanilla",
-    tagline: "A separate experiment.",
     description:
-      "An independent Peaceful Vanilla experiment kept intentionally separate, so small-team ideas can be tested freely without blurring the core network identity.",
+      "An independent Peaceful Vanilla experiment kept intentionally separate, so different ideas can be experimented freely without blurring the core network identity. A separate game? A server? Both? It's testing grounds.",
     status: "coming-soon",
     icon: "assets/fortrust/fortrust-icon.png",
     color: "#d0c0b8",

@@ -340,7 +340,7 @@ function renderCorePanel(): string {
       (project) => `
         <button type="button" data-select="${project.id}" style="--project-color: ${project.color}">
           <strong>${escapeHtml(project.name)}</strong>
-          <span>${escapeHtml(project.tagline)}</span>
+          ${project.tagline ? `<span>${escapeHtml(project.tagline)}</span>` : ""}
         </button>
       `
     )
@@ -381,10 +381,16 @@ function renderProjectPanel(project: OrbitProject): string {
     .filter(Boolean)
     .join("");
 
-  const comingSoon =
-    project.status === "coming-soon"
-      ? `<div class="coming-soon-note">This orbit is visible because it belongs to the network, but its public destination is not linked yet.</div>`
-      : "";
+  const destinationNote = project.destinationNote
+    ? `<div class="coming-soon-note">${escapeHtml(project.destinationNote)}</div>`
+    : "";
+  const actions = ctas || destinationNote;
+  const badges = project.tagline
+    ? `<div class="principles">
+        <span>${escapeHtml(project.tagline)}</span>
+        <span>${escapeHtml(project.status === "live" ? "Active destination" : "Network preview")}</span>
+      </div>`
+    : "";
 
   return `
     <div class="panel-inner">
@@ -399,13 +405,8 @@ function renderProjectPanel(project: OrbitProject): string {
         <h2 class="panel-title">${escapeHtml(project.name)}</h2>
         <p class="panel-description">${escapeHtml(project.description)}</p>
       </div>
-      <div class="principles">
-        <span>${escapeHtml(project.tagline)}</span>
-        <span>${escapeHtml(project.status === "live" ? "Active destination" : "Network preview")}</span>
-      </div>
-      <div class="cta-stack">
-        ${ctas || comingSoon}
-      </div>
+      ${badges}
+      ${actions ? `<div class="cta-stack">${actions}</div>` : ""}
     </div>
   `;
 }
