@@ -1,4 +1,5 @@
 import { networkCore, orbitProjects, type OrbitProject, type ProjectId } from "./data/projects";
+import { revealCoreImage } from "./core-image";
 import "./styles/global.css";
 
 type Selection = "network" | ProjectId;
@@ -429,7 +430,7 @@ function renderShell(): void {
               ${renderOrbitRings()}
               <button type="button" class="core-button" data-select="network" aria-label="Show ${escapeHtml(networkCore.name)} overview">
                 <span class="core-aura" aria-hidden="true"></span>
-                <img src="${assetPath(networkCore.icon)}" alt="" />
+                <img src="${assetPath(networkCore.icon)}" alt="" width="768" height="768" loading="eager" decoding="async" fetchpriority="high" />
                 <span class="core-label">
                   <strong>${escapeHtml(networkCore.name.toUpperCase())}</strong>
                   <span>${escapeHtml(networkCore.tagline)}</span>
@@ -1203,6 +1204,10 @@ function startStarfield(): void {
 
 renderShell();
 cacheRuntimeElements();
+const coreImage = mount.querySelector<HTMLImageElement>(".core-button img");
+if (coreImage) {
+  void revealCoreImage(coreImage);
+}
 applyIntroSequenceVariables();
 observeLayoutChanges();
 wireInteractions();

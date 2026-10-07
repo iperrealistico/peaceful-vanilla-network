@@ -27,7 +27,7 @@ export interface OrbitProject {
 export const networkCore = {
   name: "Peaceful Vanilla Network",
   tagline: "Community, fun, privacy and connection.",
-  icon: "assets/generated/peaceful-vanilla-network-icon.png",
+  icon: "assets/logos/peaceful-vanilla-network-icon-768.webp",
   description:
     "Peaceful Vanilla Network is a small-business ecosystem built by family and friends: gaming worlds, chat, profiles, and experiments made for real connection without big-corp nonsense.",
   principles: ["Community-first", "Fun-driven", "Privacy-aware", "Small business, not big corp"],
@@ -91,11 +91,8 @@ export const orbitProjects: OrbitProject[] = [
     id: "space",
     name: "Peaceful Vanilla Space",
     domainLabel: "peacefulvanilla.space",
-    tagline: "Profiles, hubs, and social connection.",
-    destinationNote:
-      "This orbit is visible because it belongs to the network, but its public destination is not linked yet.",
     description:
-      "A coming Peaceful Vanilla web layer for profiles, community hubs, and social surfaces that make the wider network easier to discover and more fun to explore.",
+      "An upcoming social platform for profiles, community hubs, and social surfaces straight from the old web.",
     status: "coming-soon",
     icon: "assets/generated/peaceful-vanilla-space-icon.png",
     color: "#ffc26b",
