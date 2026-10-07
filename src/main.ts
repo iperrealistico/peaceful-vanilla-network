@@ -287,7 +287,6 @@ function renderNetworkStory(): string {
 
       <article class="network-story-card" aria-label="${escapeHtml(networkCore.name)} overview">
         <div class="story-card-copy">
-          <p class="story-eyebrow">What it is</p>
           <h3>A small independent ecosystem for community, play, privacy, and connection.</h3>
           <p>
             ${escapeHtml(networkCore.description)}
@@ -317,9 +316,6 @@ function renderNetworkStory(): string {
           </section>
         </div>
 
-        <div class="story-proof-grid" aria-label="Network proof points">
-          ${renderProofItems()}
-        </div>
       </article>
     </section>
   `;
