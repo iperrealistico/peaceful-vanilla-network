@@ -96,7 +96,6 @@ const INTRO_SEQUENCE: IntroSequence = {
 
 let selected: Selection = "network";
 let panelExpanded = false;
-let lastRevealSourceRect: DOMRectReadOnly | null = null;
 let shellElement: HTMLElement | null = null;
 let detailPanelElement: HTMLElement | null = null;
 let orbitMapElement: HTMLElement | null = null;
@@ -208,14 +207,6 @@ function getProject(id: Selection): OrbitProject | undefined {
 
 function isProjectSelection(value: Selection): value is ProjectId {
   return value !== "network";
-}
-
-function getSelectionTrigger(value: Selection): HTMLElement | null {
-  if (value === "network") {
-    return coreButtonElement;
-  }
-
-  return orbitRuntime.find((runtime) => runtime.project.id === value)?.button ?? null;
 }
 
 function renderOrbitRings(): string {
@@ -669,26 +660,6 @@ function observeLayoutChanges(): void {
   }
 }
 
-function getSourceRect(sourceElement: HTMLElement | undefined, next: Selection): DOMRectReadOnly | null {
-  const source = sourceElement ?? getSelectionTrigger(next);
-  return source?.getBoundingClientRect() ?? null;
-}
-
-function setPanelRevealOrigin(panel: HTMLElement, sourceRect: DOMRectReadOnly | null): void {
-  const panelRect = panel.getBoundingClientRect();
-  const fallbackX = panelRect.left + panelRect.width / 2;
-  const fallbackY = panelRect.top + panelRect.height / 2;
-  const sourceCenterX = sourceRect ? sourceRect.left + sourceRect.width / 2 : fallbackX;
-  const sourceCenterY = sourceRect ? sourceRect.top + sourceRect.height / 2 : fallbackY;
-  const panelCenterX = panelRect.left + panelRect.width / 2;
-  const panelCenterY = panelRect.top + panelRect.height / 2;
-
-  panel.style.setProperty("--reveal-origin-x", `${(sourceCenterX - panelRect.left).toFixed(1)}px`);
-  panel.style.setProperty("--reveal-origin-y", `${(sourceCenterY - panelRect.top).toFixed(1)}px`);
-  panel.style.setProperty("--panel-enter-x", `${(sourceCenterX - panelCenterX).toFixed(1)}px`);
-  panel.style.setProperty("--panel-enter-y", `${(sourceCenterY - panelCenterY).toFixed(1)}px`);
-}
-
 function getSelectedShowcasePosition(layout: OrbitLayout): { x: number; y: number } {
   const desktop = window.innerWidth >= 920;
   const x = desktop ? clamp(window.innerWidth * 0.3, 240, 520) : window.innerWidth * 0.5;
@@ -720,30 +691,23 @@ function updateActiveElements(projectColor: string): void {
   });
 }
 
-function updatePanelState(sourceRect: DOMRectReadOnly | null): void {
+function updatePanelState(): void {
   const panel = detailPanelElement;
 
   if (!panel) {
     return;
   }
 
-  panel.innerHTML = renderPanel();
+  if (panelExpanded && panel.dataset.projectId !== selected) {
+    panel.innerHTML = renderPanel();
+    panel.dataset.projectId = selected;
+  }
   panel.toggleAttribute("inert", !panelExpanded);
   panel.setAttribute("aria-expanded", String(panelExpanded));
   panel.setAttribute("aria-hidden", String(!panelExpanded));
 
-  if (!panelExpanded) {
-    panel.classList.remove("is-expanded");
-    panel.classList.add("is-collapsed");
-    return;
-  }
-
-  setPanelRevealOrigin(panel, sourceRect);
-  panel.classList.remove("is-expanded");
-  panel.classList.add("is-collapsed");
-  panel.getBoundingClientRect();
-  panel.classList.add("is-expanded");
-  panel.classList.remove("is-collapsed");
+  panel.classList.toggle("is-expanded", panelExpanded);
+  panel.classList.toggle("is-collapsed", !panelExpanded);
 }
 
 function syncSelectedProjectClone(): void {
@@ -820,7 +784,11 @@ function syncDocumentScrollLock(): void {
   unlockDocumentScroll();
 }
 
-function setSelection(next: Selection, sourceElement?: HTMLElement): void {
+function setSelection(next: Selection): void {
+  if (next === selected && introReady) {
+    return;
+  }
+
   selected = next;
   panelExpanded = isProjectSelection(selected);
   sceneFrozen = panelExpanded;
@@ -828,12 +796,6 @@ function setSelection(next: Selection, sourceElement?: HTMLElement): void {
 
   const project = getProject(selected);
   const projectColor = project?.color ?? "#ff9500";
-  const sourceRect = panelExpanded ? getSourceRect(sourceElement, next) : lastRevealSourceRect;
-
-  if (panelExpanded && sourceRect) {
-    lastRevealSourceRect = sourceRect;
-  }
-
   shellElement?.setAttribute("data-selected", selected);
   shellElement?.setAttribute("data-panel-expanded", String(panelExpanded));
   shellElement?.classList.toggle("is-focused", panelExpanded);
@@ -843,7 +805,7 @@ function setSelection(next: Selection, sourceElement?: HTMLElement): void {
   detailPanelElement?.style.setProperty("--project-color", projectColor);
 
   updateActiveElements(projectColor);
-  updatePanelState(sourceRect);
+  updatePanelState();
   syncSelectedProjectClone();
   syncDocumentScrollLock();
   setLayoutDirty();
@@ -855,7 +817,7 @@ function selectByOffset(offset: number): void {
   const nextSelection = selectionOrder[nextIndex];
 
   if (nextSelection) {
-    setSelection(nextSelection, getSelectionTrigger(nextSelection) ?? undefined);
+    setSelection(nextSelection);
   }
 }
 
@@ -870,12 +832,12 @@ function wireInteractions(): void {
     const next = target?.dataset.select as Selection | undefined;
 
     if (next && selectionOrder.includes(next)) {
-      setSelection(next, target ?? undefined);
+      setSelection(next);
       return;
     }
 
     if (panelExpanded && clickedElement && !detailPanelElement?.contains(clickedElement)) {
-      setSelection("network", coreButtonElement ?? undefined);
+      setSelection("network");
     }
   });
 
@@ -900,7 +862,7 @@ function wireInteractions(): void {
 
     if (event.key === "Escape" || event.key === "Home") {
       event.preventDefault();
-      setSelection("network", coreButtonElement ?? undefined);
+      setSelection("network");
     }
   });
 
@@ -915,7 +877,7 @@ function wireInteractions(): void {
 
     if (event.key === "Escape" && panelExpanded) {
       event.preventDefault();
-      setSelection("network", coreButtonElement ?? undefined);
+      setSelection("network");
     }
   });
   detailPanelElement?.addEventListener(
@@ -1176,7 +1138,6 @@ function startStarfield(): void {
   let width = 0;
   let height = 0;
   let lastDraw = 0;
-  let previousDynamicScene = false;
 
   function resize(): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
@@ -1235,11 +1196,8 @@ function startStarfield(): void {
     if (dynamicScene && time - lastDraw >= framePauseMs) {
       lastDraw = time;
       draw(time);
-    } else if (!dynamicScene && previousDynamicScene) {
-      draw(lastDraw || time);
     }
 
-    previousDynamicScene = dynamicScene;
     window.requestAnimationFrame(tick);
   }
 
